@@ -60,6 +60,7 @@
 # Resources
 
 [Uniswap V4](https://v4.uniswap.org/)
+[Uniswap V4 pools](https://app.uniswap.org/explore/pools)
 [Uniswap V4 docs](https://docs.uniswap.org/contracts/v4/overview)
 [GitHub - v4-core](https://github.com/Uniswap/v4-core)
 [GitHub - v4-periphery](https://github.com/Uniswap/v4-periphery)
