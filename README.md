@@ -47,12 +47,17 @@
 - [ ] Currency reserves
 - [ ] Lock
 - [ ] Account delta
+- [ ] Balance delta
 - [ ] Operations
   - [ ] unlock
   - [ ] swap -> sync -> pay + settle -> take
 - [ ] Lifecycle
 - [ ] Application - RYO swap router
   - v4 template?
+
+- [ ] read data
+  - state view, transient state lib
+  - credits
 
 - [ ] Hooks
   - hook deployment + flags
