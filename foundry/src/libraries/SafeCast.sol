@@ -1,0 +1,9 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.30;
+
+library SafeCast {
+    function toUint256(int128 x) internal pure returns (uint256) {
+        require(x >= 0, "x < 0");
+        return uint256(uint128(x));
+    }
+}
