@@ -4,6 +4,8 @@
 
 - [ ] Prerequisites
   - Solidity
+    - Advanced Solidity to understand how to read from Uniswap V4 (`extsload`)
+    - User defined types
   - Uniswap V3
 - [ ] Project setup
   - v4 template?
@@ -68,3 +70,4 @@
 [GitHub - v4-template](https://github.com/uniswapfoundation/v4-template)
 [YouTube - Uniswap v4 on Unichain](https://www.youtube.com/watch?v=ZisqLqbakfM)
 [Cyfrin - Uniswap V4 Swap: Deep Dive Into Execution and Accounting](https://www.cyfrin.io/blog/uniswap-v4-swap-deep-dive-into-execution-and-accounting)
+[PoolManager - storage layout](https://www.evm.codes/contract?address=0x000000000004444c5dc75cb358380d2e3de08a90)

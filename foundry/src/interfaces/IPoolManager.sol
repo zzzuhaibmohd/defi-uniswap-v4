@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
+import {IExtsload} from "./IExtsload.sol";
+import {IExttload} from "./IExttload.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {ModifyLiquidityParams, SwapParams} from "../types/PoolOperation.sol";
 
-interface IPoolManager {
+interface IPoolManager is IExtsload, IExttload {
     function unlock(bytes calldata data) external returns (bytes memory);
 
     function initialize(PoolKey memory key, uint160 sqrtPriceX96)
