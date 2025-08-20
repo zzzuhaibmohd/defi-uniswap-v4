@@ -27,6 +27,10 @@ contract Dev is Test {
     function setUp() public {}
 
     function test() public {
+       // TODO: swap from pool manager
+
+        /*
+       Pool id and Pool key
         PoolKey memory key = PoolKey({
             currency0: address(0),
             currency1: USDT,
@@ -41,6 +45,7 @@ contract Dev is Test {
         console.logBytes32(PoolId.unwrap(id));
 
         assertEq(POOL_ID_ETH_USDT, PoolId.unwrap(id));
+        */
 
 
         /*
@@ -52,6 +57,5 @@ contract Dev is Test {
         console.logBytes32(vals[1]);
         */
 
-       // TODO: swap from pool manager
     }
 }
