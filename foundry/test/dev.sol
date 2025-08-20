@@ -13,6 +13,7 @@ import {
 } from "../src/types/BalanceDelta.sol";
 import {SafeCast} from "../src/libraries/SafeCast.sol";
 import {PoolId, PoolIdLibrary} from "../src/libraries/PoolId.sol";
+import {TransientState} from "../src/libraries/TransientState.sol";
 import {
     POOL_MANAGER,
     POSITION_MANAGER,
@@ -53,18 +54,37 @@ contract Dev is Test, IUnlockCallback {
         }
     }
 
+    function print(PoolKey memory key) internal {
+        int256 d0 = TransientState.currencyDelta(
+            poolManager, address(this), key.currency0
+        );
+        int256 d1 = TransientState.currencyDelta(
+            poolManager, address(this), key.currency1
+        );
+        console.log("delta 0: %e", d0);
+        console.log("delta 1: %e", d1);
+    }
+
     function unlockCallback(bytes calldata data)
         external
         returns (bytes memory)
     {
         (PoolKey memory key, SwapParams memory params) =
             abi.decode(data, (PoolKey, SwapParams));
+
+        console.log("-- Before swap --");
+        print(key);
+
         int256 d = poolManager.swap({key: key, params: params, hookData: ""});
+        console.log("-- After swap --");
+        print(key);
         BalanceDelta delta = BalanceDelta.wrap(d);
 
         int128 amount0 = delta.amount0();
         int128 amount1 = delta.amount1();
 
+        // amount > 0 = incoming
+        // amount < 0 = outgoing
         console.log("amount0: %e", amount0);
         console.log("amount1: %e", amount1);
 
@@ -75,8 +95,16 @@ contract Dev is Test, IUnlockCallback {
                 to: address(this),
                 amount: SafeCast.toUint256(amount1)
             });
+            console.log("-- After take --");
+            print(key);
+
             poolManager.sync(key.currency0);
+            console.log("-- After sync --");
+            print(key);
+
             settle(key.currency0, SafeCast.toUint256(-amount0));
+            console.log("-- After settle --");
+            print(key);
         } else {
             require(amount0 >= 0, "amount0 < 0");
             poolManager.take({
@@ -84,8 +112,16 @@ contract Dev is Test, IUnlockCallback {
                 to: address(this),
                 amount: SafeCast.toUint256(amount0)
             });
+            console.log("-- After take --");
+            print(key);
+
             poolManager.sync(key.currency1);
+            console.log("-- After sync --");
+            print(key);
+
             settle(key.currency1, SafeCast.toUint256(-amount1));
+            console.log("-- After settle --");
+            print(key);
         }
 
         return "";
@@ -99,10 +135,10 @@ contract Dev is Test, IUnlockCallback {
         console.log("coin balance: %e", coin.balanceOf(address(this)));
         console.log("ETH balance: %e", address(this).balance);
 
-        // uint256 amount = 1000 * 1e6;
-        uint256 amount = 1e18;
+        uint256 amount = 1000 * 1e6;
+        // uint256 amount = 1e18;
         // ETH = address(0) < USDC and USDT
-        bool zeroForOne = true;
+        bool zeroForOne = false;
 
         PoolKey memory key = PoolKey({
             currency0: address(0),
