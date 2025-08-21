@@ -10,4 +10,9 @@ library SafeCast {
     function toInt256(uint128 x) internal pure returns (int256) {
         return int256(uint256(x));
     }
+
+    function toInt256(int128 x) internal pure returns (int256) {
+        require(x >= 0, "x < 0");
+        return int256(x);
+    }
 }

@@ -136,7 +136,6 @@ contract Router is TStore, IUnlockCallback {
 
     receive() external payable {}
 
-    // TODO: refactor
     function unlockCallback(bytes calldata data)
         external
         onlyPoolManager
@@ -155,27 +154,34 @@ contract Router is TStore, IUnlockCallback {
                 params.hookData
             );
 
-            if (params.zeroForOne) {
-                uint256 a1 = amount1.toUint256();
-                require(a1 >= params.amountOutMin, "amount1 < min out");
-                _takeAndSettle({
-                    dst: msgSender,
-                    currencyIn: params.poolKey.currency0,
-                    amountIn: (-amount0).toUint256(),
-                    currencyOut: params.poolKey.currency1,
-                    amountOut: a1
-                });
-            } else {
-                uint256 a0 = amount0.toUint256();
-                require(a0 >= params.amountOutMin, "amount0 < min out");
-                _takeAndSettle({
-                    dst: msgSender,
-                    currencyIn: params.poolKey.currency1,
-                    amountIn: (-amount1).toUint256(),
-                    currencyOut: params.poolKey.currency0,
-                    amountOut: a0
-                });
-            }
+            (
+                address currencyIn,
+                address currencyOut,
+                uint256 amountIn,
+                uint256 amountOut
+            ) = params.zeroForOne
+                ? (
+                    params.poolKey.currency0,
+                    params.poolKey.currency1,
+                    (-amount0).toUint256(),
+                    amount1.toUint256()
+                )
+                : (
+                    params.poolKey.currency1,
+                    params.poolKey.currency0,
+                    (-amount1).toUint256(),
+                    amount0.toUint256()
+                );
+
+            require(amountOut >= params.amountOutMin, "amount out < min");
+
+            _takeAndSettle({
+                dst: msgSender,
+                currencyIn: currencyIn,
+                currencyOut: currencyOut,
+                amountIn: amountIn,
+                amountOut: amountOut
+            });
         } else if (action == SWAP_EXACT_OUT_SINGLE) {
             (address msgSender, ExactOutputSingleParams memory params) =
                 abi.decode(data, (address, ExactOutputSingleParams));
@@ -187,29 +193,34 @@ contract Router is TStore, IUnlockCallback {
                 params.hookData
             );
 
-            if (params.zeroForOne) {
-                require(amount0 <= 0, "amount 0 > 0");
-                uint256 a0 = (-amount0).toUint256();
-                require(a0 <= params.amountInMax, "amount0 > max in");
-                _takeAndSettle({
-                    dst: msgSender,
-                    currencyIn: params.poolKey.currency0,
-                    amountIn: a0,
-                    currencyOut: params.poolKey.currency1,
-                    amountOut: amount1.toUint256()
-                });
-            } else {
-                require(amount1 <= 0, "amount 1 > 0");
-                uint256 a1 = (-amount1).toUint256();
-                require(a1 <= params.amountInMax, "amount1 > max in");
-                _takeAndSettle({
-                    dst: msgSender,
-                    currencyIn: params.poolKey.currency1,
-                    amountIn: a1,
-                    currencyOut: params.poolKey.currency0,
-                    amountOut: amount0.toUint256()
-                });
-            }
+            (
+                address currencyIn,
+                address currencyOut,
+                uint256 amountIn,
+                uint256 amountOut
+            ) = params.zeroForOne
+                ? (
+                    params.poolKey.currency0,
+                    params.poolKey.currency1,
+                    (-amount0).toUint256(),
+                    amount1.toUint256()
+                )
+                : (
+                    params.poolKey.currency1,
+                    params.poolKey.currency0,
+                    (-amount1).toUint256(),
+                    amount0.toUint256()
+                );
+
+            require(amountIn <= params.amountInMax, "amount in > max");
+
+            _takeAndSettle({
+                dst: msgSender,
+                currencyIn: currencyIn,
+                currencyOut: currencyOut,
+                amountIn: amountIn,
+                amountOut: amountOut
+            });
         } else if (action == SWAP_EXACT_IN) {
             (address msgSender, ExactInputParams memory params) =
                 abi.decode(data, (address, ExactInputParams));
@@ -239,21 +250,18 @@ contract Router is TStore, IUnlockCallback {
 
                 // Next params
                 currencyIn = path.currency;
-                // TODO: safe cast
-                amountIn = int256(zeroForOne ? amount1 : amount0);
+                amountIn = (zeroForOne ? amount1 : amount0).toInt256();
             }
             // currencyIn and amountIn stores currency out and amount out
-            // TODO: safe cast
             require(
-                uint128(int128(amountIn)) >= params.amountOutMin,
+                uint256(amountIn) >= uint256(params.amountOutMin),
                 "amount out < min"
             );
             _takeAndSettle({
                 dst: msgSender,
                 currencyIn: params.currencyIn,
-                amountIn: params.amountIn,
                 currencyOut: currencyIn,
-                // TODO: safe cast
+                amountIn: params.amountIn,
                 amountOut: uint256(amountIn)
             });
         } else if (action == SWAP_EXACT_OUT) {
@@ -286,25 +294,19 @@ contract Router is TStore, IUnlockCallback {
 
                 // Next params
                 currencyOut = path.currency;
-                // Current currency in is next currency out
-                // TODO: safe cast
-                amountOut = int256(zeroForOne ? amount0 : amount1);
+                amountOut = (zeroForOne ? -amount0 : -amount1).toInt256();
             }
 
             // currencyOut and amountOut stores currency in and amount in
-            // TODO: safe cast
             require(
-                uint128(int128(amountOut)) <= params.amountInMax,
+                uint256(amountOut) <= uint256(params.amountInMax),
                 "amount in > max"
             );
-            // TODO: handle error path length = 0
             _takeAndSettle({
                 dst: msgSender,
                 currencyIn: currencyOut,
-                // TODO: safe cast
-                amountIn: uint256(amountOut),
                 currencyOut: params.currencyOut,
-                // TODO: safe cast
+                amountIn: uint256(amountOut),
                 amountOut: uint256(params.amountOut)
             });
         }
@@ -353,6 +355,8 @@ contract Router is TStore, IUnlockCallback {
         payable
         setAction(SWAP_EXACT_IN)
     {
+        require(params.path.length > 0, "path length = 0");
+
         params.currencyIn.transferIn(msg.sender, params.amountIn);
 
         poolManager.unlock(abi.encode(msg.sender, params));
@@ -368,6 +372,8 @@ contract Router is TStore, IUnlockCallback {
         payable
         setAction(SWAP_EXACT_OUT)
     {
+        require(params.path.length > 0, "path length = 0");
+
         PathKey memory path = params.path[0];
         address currencyIn = path.currency;
         currencyIn.transferIn(msg.sender, params.amountInMax);
@@ -407,8 +413,8 @@ contract Router is TStore, IUnlockCallback {
     function _takeAndSettle(
         address dst,
         address currencyIn,
-        uint256 amountIn,
         address currencyOut,
+        uint256 amountIn,
         uint256 amountOut
     ) private {
         poolManager.take({currency: currencyOut, to: dst, amount: amountOut});
