@@ -10,66 +10,9 @@ import {
     BalanceDelta, BalanceDeltaLibrary
 } from "../src/types/BalanceDelta.sol";
 import {SafeCast} from "./libraries/SafeCast.sol";
+import {CurrencyLib} from "./libraries/CurrencyLib.sol";
 import {MIN_SQRT_PRICE, MAX_SQRT_PRICE} from "./Constants.sol";
-
-contract TStore {
-    bytes32 constant SLOT = 0;
-
-    modifier setAction(uint256 action) {
-        // Use as re-entrancy guard
-        require(_getAction() == 0, "locked");
-        require(action > 0, "action = 0");
-        _setAction(action);
-        _;
-        _setAction(0);
-    }
-
-    function _setAction(uint256 action) internal {
-        assembly {
-            tstore(SLOT, action)
-        }
-    }
-
-    function _getAction() internal view returns (uint256 action) {
-        assembly {
-            action := tload(SLOT)
-        }
-    }
-}
-
-library CurrencyLib {
-    function transferIn(address currency, address src, uint256 amount)
-        internal
-    {
-        if (currency == address(0)) {
-            require(amount == msg.value, "msg.value != amount");
-        } else {
-            IERC20(currency).transferFrom(src, address(this), amount);
-        }
-    }
-
-    function transferOut(address currency, address dst, uint256 amount)
-        internal
-    {
-        if (currency == address(0)) {
-            (bool ok,) = dst.call{value: amount}("");
-        } else {
-            IERC20(currency).transfer(dst, amount);
-        }
-    }
-
-    function balanceOf(address currency, address account)
-        internal
-        view
-        returns (uint256)
-    {
-        if (currency == address(0)) {
-            return address(this).balance;
-        } else {
-            return IERC20(currency).balanceOf(address(this));
-        }
-    }
-}
+import {TStore} from "./TStore.sol";
 
 contract Router is TStore, IUnlockCallback {
     using BalanceDeltaLibrary for BalanceDelta;
@@ -322,14 +265,10 @@ contract Router is TStore, IUnlockCallback {
         address currencyIn = params.zeroForOne
             ? params.poolKey.currency0
             : params.poolKey.currency1;
+
         currencyIn.transferIn(msg.sender, params.amountIn);
-
         poolManager.unlock(abi.encode(msg.sender, params));
-
-        uint256 bal = currencyIn.balanceOf(address(this));
-        if (bal > 0) {
-            currencyIn.transferOut(msg.sender, bal);
-        }
+        _refund(currencyIn, msg.sender);
     }
 
     function swapExactOutputSingle(ExactOutputSingleParams calldata params)
@@ -340,14 +279,10 @@ contract Router is TStore, IUnlockCallback {
         address currencyIn = params.zeroForOne
             ? params.poolKey.currency0
             : params.poolKey.currency1;
+
         currencyIn.transferIn(msg.sender, params.amountInMax);
-
         poolManager.unlock(abi.encode(msg.sender, params));
-
-        uint256 bal = currencyIn.balanceOf(address(this));
-        if (bal > 0) {
-            currencyIn.transferOut(msg.sender, bal);
-        }
+        _refund(currencyIn, msg.sender);
     }
 
     function swapExactInput(ExactInputParams calldata params)
@@ -358,13 +293,8 @@ contract Router is TStore, IUnlockCallback {
         require(params.path.length > 0, "path length = 0");
 
         params.currencyIn.transferIn(msg.sender, params.amountIn);
-
         poolManager.unlock(abi.encode(msg.sender, params));
-
-        uint256 bal = params.currencyIn.balanceOf(address(this));
-        if (bal > 0) {
-            params.currencyIn.transferOut(msg.sender, bal);
-        }
+        _refund(params.currencyIn, msg.sender);
     }
 
     function swapExactOutput(ExactOutputParams calldata params)
@@ -376,13 +306,16 @@ contract Router is TStore, IUnlockCallback {
 
         PathKey memory path = params.path[0];
         address currencyIn = path.currency;
+
         currencyIn.transferIn(msg.sender, params.amountInMax);
-
         poolManager.unlock(abi.encode(msg.sender, params));
+        _refund(currencyIn, msg.sender);
+    }
 
-        uint256 bal = currencyIn.balanceOf(address(this));
+    function _refund(address currency, address dst) private {
+        uint256 bal = currency.balanceOf(address(this));
         if (bal > 0) {
-            currencyIn.transferOut(msg.sender, bal);
+            currency.transferOut(dst, bal);
         }
     }
 
