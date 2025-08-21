@@ -226,26 +226,27 @@ contract Router is TStore, IUnlockCallback {
             address currencyIn = params.currencyIn;
             int256 amountIn = params.amountIn.toInt256();
             for (uint256 i = 0; i < params.path.length; i++) {
-                (address currency0, address currency1) = params.path[i].currency
+                PathKey memory path = params.path[i];
+                (address currency0, address currency1) = path.currency
                     < currencyIn
-                    ? (params.path[i].currency, currencyIn)
-                    : (currencyIn, params.path[i].currency);
+                    ? (path.currency, currencyIn)
+                    : (currencyIn, path.currency);
 
                 PoolKey memory key = PoolKey({
                     currency0: currency0,
                     currency1: currency1,
-                    fee: params.path[i].fee,
-                    tickSpacing: params.path[i].tickSpacing,
-                    hooks: params.path[i].hooks
+                    fee: path.fee,
+                    tickSpacing: path.tickSpacing,
+                    hooks: path.hooks
                 });
 
                 bool zeroForOne = currencyIn == currency0;
 
                 (int128 amount0, int128 amount1) =
-                    _swap(key, zeroForOne, -amountIn, params.path[i].hookData);
+                    _swap(key, zeroForOne, -amountIn, path.hookData);
 
                 // Next params
-                currencyIn = params.path[i].currency;
+                currencyIn = path.currency;
                 // TODO: safe cast
                 amountIn = int256(zeroForOne ? amount1 : amount0);
             }
