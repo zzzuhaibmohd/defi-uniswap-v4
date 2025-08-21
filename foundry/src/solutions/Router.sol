@@ -1,18 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import {IERC20} from "./interfaces/IERC20.sol";
-import {IPoolManager} from "./interfaces/IPoolManager.sol";
-import {IUnlockCallback} from "./interfaces/IUnlockCallback.sol";
-import {PoolKey} from "./types/PoolKey.sol";
-import {SwapParams} from "./types/PoolOperation.sol";
-import {
-    BalanceDelta, BalanceDeltaLibrary
-} from "../src/types/BalanceDelta.sol";
-import {SafeCast} from "./libraries/SafeCast.sol";
-import {CurrencyLib} from "./libraries/CurrencyLib.sol";
-import {MIN_SQRT_PRICE, MAX_SQRT_PRICE} from "./Constants.sol";
-import {TStore} from "./TStore.sol";
+import {IERC20} from "../interfaces/IERC20.sol";
+import {IPoolManager} from "../interfaces/IPoolManager.sol";
+import {IUnlockCallback} from "../interfaces/IUnlockCallback.sol";
+import {PoolKey} from "../types/PoolKey.sol";
+import {SwapParams} from "../types/PoolOperation.sol";
+import {BalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
+import {SafeCast} from "../libraries/SafeCast.sol";
+import {CurrencyLib} from "../libraries/CurrencyLib.sol";
+import {MIN_SQRT_PRICE, MAX_SQRT_PRICE} from "../Constants.sol";
+import {TStore} from "../TStore.sol";
 
 contract Router is TStore, IUnlockCallback {
     using BalanceDeltaLibrary for BalanceDelta;
