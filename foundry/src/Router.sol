@@ -158,25 +158,23 @@ contract Router is TStore, IUnlockCallback {
             if (params.zeroForOne) {
                 uint256 a1 = amount1.toUint256();
                 require(a1 >= params.amountOutMin, "amount1 < min out");
-                poolManager.take({
-                    currency: params.poolKey.currency1,
-                    to: msgSender,
-                    amount: a1
+                _takeAndSettle({
+                    dst: msgSender,
+                    currencyIn: params.poolKey.currency0,
+                    amountIn: (-amount0).toUint256(),
+                    currencyOut: params.poolKey.currency1,
+                    amountOut: a1
                 });
-
-                poolManager.sync(params.poolKey.currency0);
-                _settle(params.poolKey.currency0, (-amount0).toUint256());
             } else {
                 uint256 a0 = amount0.toUint256();
                 require(a0 >= params.amountOutMin, "amount0 < min out");
-                poolManager.take({
-                    currency: params.poolKey.currency0,
-                    to: msgSender,
-                    amount: a0
+                _takeAndSettle({
+                    dst: msgSender,
+                    currencyIn: params.poolKey.currency1,
+                    amountIn: (-amount1).toUint256(),
+                    currencyOut: params.poolKey.currency0,
+                    amountOut: a0
                 });
-
-                poolManager.sync(params.poolKey.currency1);
-                _settle(params.poolKey.currency1, (-amount1).toUint256());
             }
         } else if (action == SWAP_EXACT_OUT_SINGLE) {
             (address msgSender, ExactOutputSingleParams memory params) =
@@ -193,28 +191,24 @@ contract Router is TStore, IUnlockCallback {
                 require(amount0 <= 0, "amount 0 > 0");
                 uint256 a0 = (-amount0).toUint256();
                 require(a0 <= params.amountInMax, "amount0 > max in");
-
-                poolManager.take({
-                    currency: params.poolKey.currency1,
-                    to: msgSender,
-                    amount: amount1.toUint256()
+                _takeAndSettle({
+                    dst: msgSender,
+                    currencyIn: params.poolKey.currency0,
+                    amountIn: a0,
+                    currencyOut: params.poolKey.currency1,
+                    amountOut: amount1.toUint256()
                 });
-
-                poolManager.sync(params.poolKey.currency0);
-                _settle(params.poolKey.currency0, a0);
             } else {
                 require(amount1 <= 0, "amount 1 > 0");
                 uint256 a1 = (-amount1).toUint256();
                 require(a1 <= params.amountInMax, "amount1 > max in");
-
-                poolManager.take({
-                    currency: params.poolKey.currency0,
-                    to: msgSender,
-                    amount: amount0.toUint256()
+                _takeAndSettle({
+                    dst: msgSender,
+                    currencyIn: params.poolKey.currency1,
+                    amountIn: a1,
+                    currencyOut: params.poolKey.currency0,
+                    amountOut: amount0.toUint256()
                 });
-
-                poolManager.sync(params.poolKey.currency1);
-                _settle(params.poolKey.currency1, a1);
             }
         } else if (action == SWAP_EXACT_IN) {
             (address msgSender, ExactInputParams memory params) =
@@ -254,15 +248,14 @@ contract Router is TStore, IUnlockCallback {
                 uint128(int128(amountIn)) >= params.amountOutMin,
                 "amount out < min"
             );
-            poolManager.take({
-                currency: currencyIn,
-                to: msgSender,
+            _takeAndSettle({
+                dst: msgSender,
+                currencyIn: params.currencyIn,
+                amountIn: params.amountIn,
+                currencyOut: currencyIn,
                 // TODO: safe cast
-                amount: uint256(amountIn)
+                amountOut: uint256(amountIn)
             });
-
-            poolManager.sync(params.currencyIn);
-            _settle(params.currencyIn, params.amountIn);
         } else if (action == SWAP_EXACT_OUT) {
             (address msgSender, ExactOutputParams memory params) =
                 abi.decode(data, (address, ExactOutputParams));
@@ -305,15 +298,15 @@ contract Router is TStore, IUnlockCallback {
                 "amount in > max"
             );
             // TODO: handle error path length = 0
-            poolManager.take({
-                currency: params.currencyOut,
-                to: msgSender,
+            _takeAndSettle({
+                dst: msgSender,
+                currencyIn: currencyOut,
                 // TODO: safe cast
-                amount: uint256(params.amountOut)
+                amountIn: uint256(amountOut),
+                currencyOut: params.currencyOut,
+                // TODO: safe cast
+                amountOut: uint256(params.amountOut)
             });
-
-            poolManager.sync(currencyOut);
-            _settle(currencyOut, uint256(amountOut));
         }
 
         revert UnsupportedAction(action);
@@ -411,11 +404,21 @@ contract Router is TStore, IUnlockCallback {
         return (delta.amount0(), delta.amount1());
     }
 
-    function _settle(address currency, uint256 amount) private {
-        if (currency == address(0)) {
-            poolManager.settle{value: amount}();
+    function _takeAndSettle(
+        address dst,
+        address currencyIn,
+        uint256 amountIn,
+        address currencyOut,
+        uint256 amountOut
+    ) private {
+        poolManager.take({currency: currencyOut, to: dst, amount: amountOut});
+
+        poolManager.sync(currencyIn);
+
+        if (currencyIn == address(0)) {
+            poolManager.settle{value: amountIn}();
         } else {
-            IERC20(currency).transfer(address(poolManager), amount);
+            IERC20(currencyIn).transfer(address(poolManager), amountIn);
             poolManager.settle();
         }
     }
