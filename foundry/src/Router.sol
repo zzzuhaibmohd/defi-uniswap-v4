@@ -16,6 +16,9 @@ contract TStore {
     bytes32 constant SLOT = 0;
 
     modifier setAction(uint256 action) {
+        // Use as re-entrancy guard
+        require(_getAction() == 0, "locked");
+        require(action > 0, "action = 0");
         _setAction(action);
         _;
         _setAction(0);
@@ -34,10 +37,45 @@ contract TStore {
     }
 }
 
+library CurrencyLib {
+    function transferIn(address currency, address src, uint256 amount)
+        internal
+    {
+        if (currency == address(0)) {
+            require(amount == msg.value, "msg.value != amount");
+        } else {
+            IERC20(currency).transferFrom(src, address(this), amount);
+        }
+    }
+
+    function transferOut(address currency, address dst, uint256 amount)
+        internal
+    {
+        if (currency == address(0)) {
+            (bool ok,) = dst.call{value: amount}("");
+        } else {
+            IERC20(currency).transfer(dst, amount);
+        }
+    }
+
+    function balanceOf(address currency, address account)
+        internal
+        view
+        returns (uint256)
+    {
+        if (currency == address(0)) {
+            return address(this).balance;
+        } else {
+            return IERC20(currency).balanceOf(address(this));
+        }
+    }
+}
+
 contract Router is TStore, IUnlockCallback {
     using BalanceDeltaLibrary for BalanceDelta;
     using SafeCast for int128;
     using SafeCast for uint128;
+    using CurrencyLib for address;
 
     // Actions
     uint256 private constant SWAP_EXACT_IN_SINGLE = 0x06;
@@ -59,7 +97,7 @@ contract Router is TStore, IUnlockCallback {
         PoolKey poolKey;
         bool zeroForOne;
         uint128 amountIn;
-        uint128 amountOutMinimum;
+        uint128 amountOutMin;
         bytes hookData;
     }
 
@@ -67,7 +105,7 @@ contract Router is TStore, IUnlockCallback {
         PoolKey poolKey;
         bool zeroForOne;
         uint128 amountOut;
-        uint128 amountInMaximum;
+        uint128 amountInMax;
         bytes hookData;
     }
 
@@ -75,14 +113,14 @@ contract Router is TStore, IUnlockCallback {
         address currencyIn;
         PathKey[] path;
         uint128 amountIn;
-        uint128 amountOutMinimum;
+        uint128 amountOutMin;
     }
 
     struct ExactOutputParams {
         address currencyOut;
         PathKey[] path;
         uint128 amountOut;
-        uint128 amountInMaximum;
+        uint128 amountInMax;
     }
 
     error UnsupportedAction(uint256 action);
@@ -120,7 +158,7 @@ contract Router is TStore, IUnlockCallback {
 
             if (params.zeroForOne) {
                 uint256 a1 = amount1.toUint256();
-                require(a1 >= params.amountOutMinimum, "amount1 < min out");
+                require(a1 >= params.amountOutMin, "amount1 < min out");
                 poolManager.take({
                     currency: params.poolKey.currency1,
                     to: msgSender,
@@ -131,7 +169,7 @@ contract Router is TStore, IUnlockCallback {
                 _settle(params.poolKey.currency0, (-amount0).toUint256());
             } else {
                 uint256 a0 = amount0.toUint256();
-                require(a0 >= params.amountOutMinimum, "amount0 < min out");
+                require(a0 >= params.amountOutMin, "amount0 < min out");
                 poolManager.take({
                     currency: params.poolKey.currency0,
                     to: msgSender,
@@ -156,7 +194,7 @@ contract Router is TStore, IUnlockCallback {
             if (params.zeroForOne) {
                 require(amount0 <= 0, "amount 0 > 0");
                 uint256 a0 = (-amount0).toUint256();
-                require(a0 <= params.amountInMaximum, "amount0 > max in");
+                require(a0 <= params.amountInMax, "amount0 > max in");
 
                 poolManager.take({
                     currency: params.poolKey.currency1,
@@ -169,7 +207,7 @@ contract Router is TStore, IUnlockCallback {
             } else {
                 require(amount1 <= 0, "amount 1 > 0");
                 uint256 a1 = (-amount1).toUint256();
-                require(a1 <= params.amountInMaximum, "amount1 > max in");
+                require(a1 <= params.amountInMax, "amount1 > max in");
 
                 poolManager.take({
                     currency: params.poolKey.currency0,
@@ -196,13 +234,17 @@ contract Router is TStore, IUnlockCallback {
         payable
         setAction(SWAP_EXACT_IN_SINGLE)
     {
-        IERC20(
-            params.zeroForOne
-                ? params.poolKey.currency0
-                : params.poolKey.currency1
-        ).transferFrom(msg.sender, address(this), params.amountIn);
+        address currencyIn = params.zeroForOne
+            ? params.poolKey.currency0
+            : params.poolKey.currency1;
+        currencyIn.transferIn(msg.sender, params.amountIn);
 
         poolManager.unlock(abi.encode(msg.sender, params));
+
+        uint256 bal = currencyIn.balanceOf(address(this));
+        if (bal > 0) {
+            currencyIn.transferOut(msg.sender, bal);
+        }
     }
 
     function swapExactOutputSingle(ExactOutputSingleParams calldata params)
@@ -210,10 +252,17 @@ contract Router is TStore, IUnlockCallback {
         payable
         setAction(SWAP_EXACT_OUT_SINGLE)
     {
-        // Transfer token in from msg.sender
-        // Unlock
-        // Swap
-        // Check amount out > min
+        address currencyIn = params.zeroForOne
+            ? params.poolKey.currency0
+            : params.poolKey.currency1;
+        currencyIn.transferIn(msg.sender, params.amountInMax);
+
+        poolManager.unlock(abi.encode(msg.sender, params));
+
+        uint256 bal = currencyIn.balanceOf(address(this));
+        if (bal > 0) {
+            currencyIn.transferOut(msg.sender, bal);
+        }
     }
 
     function swapExactInput(ExactInputParams calldata params)
