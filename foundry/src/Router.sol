@@ -85,14 +85,6 @@ contract Router is TStore, IUnlockCallback {
 
     IPoolManager public immutable poolManager;
 
-    struct PathKey {
-        address currency;
-        uint24 fee;
-        int24 tickSpacing;
-        address hooks;
-        bytes hookData;
-    }
-
     struct ExactInputSingleParams {
         PoolKey poolKey;
         bool zeroForOne;
@@ -106,6 +98,14 @@ contract Router is TStore, IUnlockCallback {
         bool zeroForOne;
         uint128 amountOut;
         uint128 amountInMax;
+        bytes hookData;
+    }
+
+    struct PathKey {
+        address currency;
+        uint24 fee;
+        int24 tickSpacing;
+        address hooks;
         bytes hookData;
     }
 
@@ -136,7 +136,7 @@ contract Router is TStore, IUnlockCallback {
 
     receive() external payable {}
 
-    // TODO: how to get msg.sender
+    // TODO: refactor
     function unlockCallback(bytes calldata data)
         external
         onlyPoolManager
@@ -219,8 +219,51 @@ contract Router is TStore, IUnlockCallback {
                 _settle(params.poolKey.currency1, a1);
             }
         } else if (action == SWAP_EXACT_IN) {
-            ExactInputParams memory params =
-                abi.decode(data, (ExactInputParams));
+            (address msgSender, ExactInputParams memory params) =
+                abi.decode(data, (address, ExactInputParams));
+            require(msgSender != address(0), "msg sender = address(0)");
+
+            address currencyIn = params.currencyIn;
+            int256 amountIn = params.amountIn.toInt256();
+            for (uint256 i = 0; i < params.path.length; i++) {
+                (address currency0, address currency1) = params.path[i].currency
+                    < currencyIn
+                    ? (params.path[i].currency, currencyIn)
+                    : (currencyIn, params.path[i].currency);
+
+                PoolKey memory key = PoolKey({
+                    currency0: currency0,
+                    currency1: currency1,
+                    fee: params.path[i].fee,
+                    tickSpacing: params.path[i].tickSpacing,
+                    hooks: params.path[i].hooks
+                });
+
+                bool zeroForOne = currencyIn == currency0;
+
+                (int128 amount0, int128 amount1) =
+                    _swap(key, zeroForOne, -amountIn, params.path[i].hookData);
+
+                // Next params
+                currencyIn = params.path[i].currency;
+                // TODO: safe cast
+                amountIn = int256(zeroForOne ? amount1 : amount0);
+            }
+            // currencyIn and amountIn stores currency out and amount out
+            // TODO: safe cast
+            require(
+                uint128(int128(amountIn)) >= params.amountOutMin,
+                "amount out < min"
+            );
+            poolManager.take({
+                currency: currencyIn,
+                to: msgSender,
+                // TODO: safe cast
+                amount: uint256(amountIn)
+            });
+
+            poolManager.sync(params.currencyIn);
+            _settle(params.currencyIn, params.amountIn);
         } else if (action == SWAP_EXACT_OUT) {
             ExactOutputParams memory params =
                 abi.decode(data, (ExactOutputParams));
@@ -269,7 +312,16 @@ contract Router is TStore, IUnlockCallback {
         external
         payable
         setAction(SWAP_EXACT_IN)
-    {}
+    {
+        params.currencyIn.transferIn(msg.sender, params.amountIn);
+
+        poolManager.unlock(abi.encode(msg.sender, params));
+
+        uint256 bal = params.currencyIn.balanceOf(address(this));
+        if (bal > 0) {
+            params.currencyIn.transferOut(msg.sender, bal);
+        }
+    }
 
     function swapExactOutput(ExactOutputParams calldata params)
         external
@@ -299,29 +351,6 @@ contract Router is TStore, IUnlockCallback {
         });
         BalanceDelta delta = BalanceDelta.wrap(d);
         return (delta.amount0(), delta.amount1());
-        /*
-        if (params.zeroForOne) {
-            require(amount1 >= 0, "amount1 < 0");
-            poolManager.take({
-                currency: key.currency1,
-                to: address(this),
-                amount: amount1.toUint256()
-            });
-
-            poolManager.sync(key.currency0);
-            _settle(key.currency0, (-amount0).toUint256());
-        } else {
-            require(amount0 >= 0, "amount0 < 0");
-            poolManager.take({
-                currency: key.currency0,
-                to: address(this),
-                amount: amount0.toUint256()
-            });
-
-            poolManager.sync(key.currency1);
-            _settle(key.currency1, (-amount1).toUint256());
-        }
-        */
     }
 
     function _settle(address currency, uint256 amount) private {
