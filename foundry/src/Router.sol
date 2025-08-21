@@ -147,7 +147,6 @@ contract Router is TStore, IUnlockCallback {
         if (action == SWAP_EXACT_IN_SINGLE) {
             (address msgSender, ExactInputSingleParams memory params) =
                 abi.decode(data, (address, ExactInputSingleParams));
-            require(msgSender != address(0), "msg sender = address(0)");
 
             (int128 amount0, int128 amount1) = _swap(
                 params.poolKey,
@@ -182,7 +181,6 @@ contract Router is TStore, IUnlockCallback {
         } else if (action == SWAP_EXACT_OUT_SINGLE) {
             (address msgSender, ExactOutputSingleParams memory params) =
                 abi.decode(data, (address, ExactOutputSingleParams));
-            require(msgSender != address(0), "msg sender = address(0)");
 
             (int128 amount0, int128 amount1) = _swap(
                 params.poolKey,
@@ -221,11 +219,11 @@ contract Router is TStore, IUnlockCallback {
         } else if (action == SWAP_EXACT_IN) {
             (address msgSender, ExactInputParams memory params) =
                 abi.decode(data, (address, ExactInputParams));
-            require(msgSender != address(0), "msg sender = address(0)");
 
+            uint256 n = params.path.length;
             address currencyIn = params.currencyIn;
             int256 amountIn = params.amountIn.toInt256();
-            for (uint256 i = 0; i < params.path.length; i++) {
+            for (uint256 i = 0; i < n; i++) {
                 PathKey memory path = params.path[i];
                 (address currency0, address currency1) = path.currency
                     < currencyIn
@@ -266,8 +264,56 @@ contract Router is TStore, IUnlockCallback {
             poolManager.sync(params.currencyIn);
             _settle(params.currencyIn, params.amountIn);
         } else if (action == SWAP_EXACT_OUT) {
-            ExactOutputParams memory params =
-                abi.decode(data, (ExactOutputParams));
+            (address msgSender, ExactOutputParams memory params) =
+                abi.decode(data, (address, ExactOutputParams));
+
+            uint256 n = params.path.length;
+            address currencyOut = params.currencyOut;
+            int256 amountOut = params.amountOut.toInt256();
+            for (uint256 i = n - 1; i > 0; i--) {
+                PathKey memory path = params.path[i];
+
+                (address currency0, address currency1) = path.currency
+                    < currencyOut
+                    ? (path.currency, currencyOut)
+                    : (currencyOut, path.currency);
+
+                PoolKey memory key = PoolKey({
+                    currency0: currency0,
+                    currency1: currency1,
+                    fee: path.fee,
+                    tickSpacing: path.tickSpacing,
+                    hooks: path.hooks
+                });
+
+                bool zeroForOne = currencyOut == currency1;
+
+                (int128 amount0, int128 amount1) =
+                    _swap(key, zeroForOne, amountOut, path.hookData);
+
+                // Next params
+                currencyOut = path.currency;
+                // Current currency in is next currency out
+                // TODO: safe cast
+                amountOut = int256(zeroForOne ? amount0 : amount1);
+            }
+
+            // currencyOut and amountOut stores currency in and amount in
+            // TODO: safe cast
+            require(
+                uint128(int128(amountOut)) <= params.amountInMax,
+                "amount in > max"
+            );
+            // TODO: handle error path length = 0
+            poolManager.take({
+                currency: params.currencyOut,
+                to: msgSender,
+                // TODO: safe cast
+                amount: uint256(params.amountOut)
+            });
+
+            poolManager.sync(currencyOut);
+            _settle(currencyOut, uint256(amountOut));
         }
 
         revert UnsupportedAction(action);
@@ -328,7 +374,18 @@ contract Router is TStore, IUnlockCallback {
         external
         payable
         setAction(SWAP_EXACT_OUT)
-    {}
+    {
+        PathKey memory path = params.path[0];
+        address currencyIn = path.currency;
+        currencyIn.transferIn(msg.sender, params.amountInMax);
+
+        poolManager.unlock(abi.encode(msg.sender, params));
+
+        uint256 bal = currencyIn.balanceOf(address(this));
+        if (bal > 0) {
+            currencyIn.transferOut(msg.sender, bal);
+        }
+    }
 
     function _swap(
         PoolKey memory key,
