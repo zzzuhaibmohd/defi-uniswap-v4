@@ -11,6 +11,7 @@ import {
     POOL_ID_ETH_USDT,
     POOL_ID_ETH_USDC,
     POOL_ID_ETH_WBTC,
+    POOL_ID_WBTC_USDC,
     USDT,
     USDC,
     WBTC
@@ -192,12 +193,14 @@ contract RouterTest is Test, TestHelper {
         });
 
         uint128 amountIn = 1000 * 1e6;
-        uint256 amountOut = router.swapExactInput(Router.ExactInputParams({
-            currencyIn: USDC,
-            path: path,
-            amountIn: amountIn,
-            amountOutMin: 1
-        }));
+        uint256 amountOut = router.swapExactInput(
+            Router.ExactInputParams({
+                currencyIn: USDC,
+                path: path,
+                amountIn: amountIn,
+                amountOutMin: 1
+            })
+        );
 
         helper.set("After swap USDC", usdc.balanceOf(address(this)));
         helper.set("After swap WBTC", wbtc.balanceOf(address(this)));
@@ -209,6 +212,51 @@ contract RouterTest is Test, TestHelper {
         console.log("WBTC delta: %e", d1);
 
         assertLt(d0, 0, "USDC delta");
+        assertGt(d1, 0, "WBTC delta");
+        assertEq(amountOut, uint256(d1), "amount out");
+    }
+
+    function test_swapExactInput_ETH_USDC_WBTC() public {
+        // Swap ETH -> USDC -> WBTC
+        helper.set("Before swap ETH", address(this).balance);
+        helper.set("Before swap WBTC", wbtc.balanceOf(address(this)));
+
+        Router.PathKey[] memory path = new Router.PathKey[](2);
+        path[0] = Router.PathKey({
+            currency: USDC,
+            fee: 500,
+            tickSpacing: 10,
+            hooks: address(0),
+            hookData: ""
+        });
+        path[1] = Router.PathKey({
+            currency: WBTC,
+            fee: 500,
+            tickSpacing: 10,
+            hooks: address(0),
+            hookData: ""
+        });
+
+        uint128 amountIn = 1e18;
+        uint256 amountOut = router.swapExactInput{value: amountIn}(
+            Router.ExactInputParams({
+                currencyIn: address(0),
+                path: path,
+                amountIn: amountIn,
+                amountOutMin: 1
+            })
+        );
+
+        helper.set("After swap ETH", address(this).balance);
+        helper.set("After swap WBTC", wbtc.balanceOf(address(this)));
+
+        int256 d0 = helper.delta("After swap ETH", "Before swap ETH");
+        int256 d1 = helper.delta("After swap WBTC", "Before swap WBTC");
+
+        console.log("ETH delta: %e", d0);
+        console.log("WBTC delta: %e", d1);
+
+        assertLt(d0, 0, "ETH delta");
         assertGt(d1, 0, "WBTC delta");
         assertEq(amountOut, uint256(d1), "amount out");
     }
