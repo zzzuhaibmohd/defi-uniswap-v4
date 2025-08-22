@@ -20,8 +20,10 @@ import {
     POOLS_SLOT,
     POOL_ID_ETH_USDT,
     POOL_ID_ETH_USDC,
+    POOL_ID_ETH_WBTC,
     USDT,
     USDC,
+    WBTC,
     MIN_SQRT_PRICE,
     MAX_SQRT_PRICE
 } from "../src/Constants.sol";
@@ -31,7 +33,7 @@ using BalanceDeltaLibrary for BalanceDelta;
 /*
 forge test --fork-url $FORK_URL --match-path test/dev.sol -vvvv
 */
-contract Dev is Test, IUnlockCallback {
+contract Dev is Test {
     IPoolManager constant poolManager = IPoolManager(POOL_MANAGER);
     IPositionManager constant posm = IPositionManager(POSITION_MANAGER);
     bytes32 constant POOL_ID = POOL_ID_ETH_USDC;
@@ -45,6 +47,23 @@ contract Dev is Test, IUnlockCallback {
 
     receive() external payable {}
 
+    function test_pool_key() public {
+        PoolKey memory key = PoolKey({
+            currency0: address(0),
+            currency1: WBTC,
+            fee: 3000,
+            tickSpacing: 60,
+            hooks: address(0)
+        });
+
+        PoolId id = PoolIdLibrary.toId(key);
+
+        console.logBytes32(PoolId.unwrap(id));
+
+        assertEq(POOL_ID_ETH_WBTC, PoolId.unwrap(id));
+    }
+
+    /*
     function settle(address currency, uint256 amount) internal {
         if (currency == address(0)) {
             poolManager.settle{value: amount}();
@@ -163,7 +182,6 @@ contract Dev is Test, IUnlockCallback {
         console.log("coin balance: %e", coin.balanceOf(address(this)));
         console.log("ETH balance: %e", address(this).balance);
 
-        /*
        Pool id and Pool key
         PoolKey memory key = PoolKey({
             currency0: address(0),
@@ -179,15 +197,13 @@ contract Dev is Test, IUnlockCallback {
         console.logBytes32(PoolId.unwrap(id));
 
         assertEq(POOL_ID_ETH_USDT, PoolId.unwrap(id));
-        */
 
-        /*
         // TODO: read from Pool.extsload
         // slot of value = keccak256(key, slot where mapping is declared)
         bytes32 slot = keccak256(abi.encode(POOL_ID, POOLS_SLOT));
         bytes32[] memory vals = poolManager.extsload(slot, 3);
         console.logBytes32(vals[0]);
         console.logBytes32(vals[1]);
-        */
     }
+    */
 }
