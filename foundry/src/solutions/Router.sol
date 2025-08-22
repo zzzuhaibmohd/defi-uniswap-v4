@@ -123,6 +123,8 @@ contract Router is TStore, IUnlockCallback {
                 amountIn: amountIn,
                 amountOut: amountOut
             });
+
+            return abi.encode(amountOut);
         } else if (action == SWAP_EXACT_OUT_SINGLE) {
             (address msgSender, ExactOutputSingleParams memory params) =
                 abi.decode(data, (address, ExactOutputSingleParams));
@@ -162,6 +164,8 @@ contract Router is TStore, IUnlockCallback {
                 amountIn: amountIn,
                 amountOut: amountOut
             });
+
+            return abi.encode(amountIn);
         } else if (action == SWAP_EXACT_IN) {
             (address msgSender, ExactInputParams memory params) =
                 abi.decode(data, (address, ExactInputParams));
@@ -205,6 +209,8 @@ contract Router is TStore, IUnlockCallback {
                 amountIn: params.amountIn,
                 amountOut: uint256(amountIn)
             });
+
+            return abi.encode(uint256(amountIn));
         } else if (action == SWAP_EXACT_OUT) {
             (address msgSender, ExactOutputParams memory params) =
                 abi.decode(data, (address, ExactOutputParams));
@@ -250,6 +256,8 @@ contract Router is TStore, IUnlockCallback {
                 amountIn: uint256(amountOut),
                 amountOut: uint256(params.amountOut)
             });
+
+            return abi.encode(uint256(amountOut));
         }
 
         revert UnsupportedAction(action);
@@ -259,13 +267,15 @@ contract Router is TStore, IUnlockCallback {
         external
         payable
         setAction(SWAP_EXACT_IN_SINGLE)
+        returns (uint256 amountOut)
     {
         address currencyIn = params.zeroForOne
             ? params.poolKey.currency0
             : params.poolKey.currency1;
 
         currencyIn.transferIn(msg.sender, params.amountIn);
-        poolManager.unlock(abi.encode(msg.sender, params));
+        bytes memory res = poolManager.unlock(abi.encode(msg.sender, params));
+        amountOut = abi.decode(res, (uint256));
         _refund(currencyIn, msg.sender);
     }
 
@@ -273,6 +283,7 @@ contract Router is TStore, IUnlockCallback {
         external
         payable
         setAction(SWAP_EXACT_OUT_SINGLE)
+        returns (uint256 amountIn)
     {
         address currencyIn = params.zeroForOne
             ? params.poolKey.currency0
@@ -280,18 +291,25 @@ contract Router is TStore, IUnlockCallback {
 
         currencyIn.transferIn(msg.sender, params.amountInMax);
         poolManager.unlock(abi.encode(msg.sender, params));
-        _refund(currencyIn, msg.sender);
+
+        uint256 refunded = _refund(currencyIn, msg.sender);
+        if (refunded < params.amountInMax) {
+            return params.amountInMax - refunded;
+        }
+        return 0;
     }
 
     function swapExactInput(ExactInputParams calldata params)
         external
         payable
         setAction(SWAP_EXACT_IN)
+        returns (uint256 amountOut)
     {
         require(params.path.length > 0, "path length = 0");
 
         params.currencyIn.transferIn(msg.sender, params.amountIn);
-        poolManager.unlock(abi.encode(msg.sender, params));
+        bytes memory res = poolManager.unlock(abi.encode(msg.sender, params));
+        amountOut = abi.decode(res, (uint256));
         _refund(params.currencyIn, msg.sender);
     }
 
@@ -299,6 +317,7 @@ contract Router is TStore, IUnlockCallback {
         external
         payable
         setAction(SWAP_EXACT_OUT)
+        returns (uint256 amountIn)
     {
         require(params.path.length > 0, "path length = 0");
 
@@ -307,14 +326,20 @@ contract Router is TStore, IUnlockCallback {
 
         currencyIn.transferIn(msg.sender, params.amountInMax);
         poolManager.unlock(abi.encode(msg.sender, params));
-        _refund(currencyIn, msg.sender);
+
+        uint256 refunded = _refund(currencyIn, msg.sender);
+        if (refunded < params.amountInMax) {
+            return params.amountInMax - refunded;
+        }
+        return 0;
     }
 
-    function _refund(address currency, address dst) private {
+    function _refund(address currency, address dst) private returns (uint256) {
         uint256 bal = currency.balanceOf(address(this));
         if (bal > 0) {
             currency.transferOut(dst, bal);
         }
+        return bal;
     }
 
     function _swap(
