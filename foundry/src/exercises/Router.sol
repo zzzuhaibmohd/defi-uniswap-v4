@@ -84,6 +84,7 @@ contract Router is TStore, IUnlockCallback {
         onlyPoolManager
         returns (bytes memory)
     {
+        uint256 action = _getAction();
         // Write your code here
         revert UnsupportedAction(action);
     }
