@@ -10,57 +10,67 @@
 - [ ] Project setup
   - v4 template?
 
-# Contracts
-
-- [ ] v4-core -> v4 router (BaseActionsRouter) -> universal router
-
-```
-  - UniversalRouter.execute
-    - dispatch
-      - V4Router._executeActions
-        - PoolManager.unlock
-          - V4Router.unlockCallback
-            - _unlockCallback
-                - _executeActionsWithoutUnlock
-                    - _handleActions
-```
-
-# Pool manager
+# Foundation
 
 - [ ] V4 vs V3
   - Hooks
-  - dynamic fees
-  - [ ] Singleton
+  - Dynamic fees
+  - Singleton
     - PoolManager `mapping(PoolId id => Pool.State) internal _pools`
-  - [ ] Flash accounting
-  - [ ] ERC6909
-  - [ ] Hooks
-  - [ ] Subscriber?
+  - Flash accounting
+  - ERC6909
+    - traders
+    - liquidity providers
+- [ ] Repositories
+      TODO: excalidraw
 
-- [ ] Transient storage
-  - lock, currency delta, currency reserve, `NonzeroDeltaCount`
+  ```
+   universal router   ->    v4 router    ->  v4-core
+  (universal-router)     (v4-periphery)     (v4-core)
+  ```
+
+  ```
+    - UniversalRouter.execute
+      - dispatch
+        - V4Router._executeActions
+          - PoolManager.unlock
+            - V4Router.unlockCallback
+              - _unlockCallback
+                  - _executeActionsWithoutUnlock
+                      - _handleActions
+  ```
+
+# Pool manager
+
+- [ ] Goal
+- [ ] Currency - (ERC20 token + native token (ETH))
+  - currency0 and currency1
+  - ETH = address 0
+  - ERC20 = token address
 - [ ] Pool key and pool id
   - Uniswap V4 UI -> Dune
-  - [ ] Currency
-    - id
-      - ETH = address 0
-      - ERC20 = token address
-- [ ] Currency reserves
-- [ ] Lock
-- [ ] Account delta
-- [ ] Balance delta
-- [ ] Operations
-  - [ ] unlock
-  - [ ] swap -> sync -> pay + settle -> take
-- [ ] Lifecycle
-- [ ] Application - RYO swap router
-  - v4 template?
 
-- [ ] read data
+- [ ] Lock
+  - `swap` -> `onlyWhenUnlocked`, `Lock`, `unlock`, `unlockCallback`
+  - transient storage
+- [ ] Transient storage
+  - difference from state variables
+  - `Lock`, account delta, `CurrencyDelta`, `CurrencyReserve`, `NonzeroDeltaCount`
+- [ ] Account delta TODO: organize topics about account delta and currency delta
+  - take -> - (claim)
+  - settle -> + (owe)
+- [ ] Balance delta
+- [ ] Swap
+  - example: swap -> sync -> pay + settle -> take
+  - Currency reserves
+  - foundry script
+- [ ] Read data
+  - extsload, exttload
   - state view, transient state lib
   - credits
+- [ ] Application - RYO swap router
 
-- [ ] Hooks
+- [ ] TODO: Hooks
   - hook deployment + flags
     - `Hooks.hasPermission`
     - https://docs.uniswap.org/contracts/v4/guides/hooks/hook-deployment
