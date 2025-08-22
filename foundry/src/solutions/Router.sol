@@ -54,6 +54,8 @@ contract Router is TStore, IUnlockCallback {
 
     struct ExactInputParams {
         address currencyIn;
+        // First element + currencyIn determines the first pool to swap
+        // Last element + previous path element's currency determines the last pool to swap
         PathKey[] path;
         uint128 amountIn;
         uint128 amountOutMin;
@@ -61,6 +63,8 @@ contract Router is TStore, IUnlockCallback {
 
     struct ExactOutputParams {
         address currencyOut;
+        // Last element + currencyOut determines the last pool to swap
+        // First element + second path element's currency determines the first pool to swap
         PathKey[] path;
         uint128 amountOut;
         uint128 amountInMax;
