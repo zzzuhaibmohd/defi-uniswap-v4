@@ -67,7 +67,7 @@ contract Router is TStore, IUnlockCallback {
     error UnsupportedAction(uint256 action);
 
     modifier onlyPoolManager() {
-        require(msg.sender != address(poolManager), "not pool manager");
+        require(msg.sender == address(poolManager), "not pool manager");
         _;
     }
 
