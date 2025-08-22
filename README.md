@@ -40,7 +40,7 @@
 - [ ] Transient storage
   - lock, currency delta, currency reserve, `NonzeroDeltaCount`
 - [ ] Pool key and pool id
-  - Dune
+  - Uniswap V4 UI -> Dune
   - [ ] Currency
     - id
       - ETH = address 0

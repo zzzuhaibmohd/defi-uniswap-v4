@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
+import {console} from "forge-std/Test.sol";
+
 import {IERC20} from "../interfaces/IERC20.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {IUnlockCallback} from "../interfaces/IUnlockCallback.sol";
@@ -218,8 +220,8 @@ contract Router is TStore, IUnlockCallback {
             uint256 n = params.path.length;
             address currencyOut = params.currencyOut;
             int256 amountOut = params.amountOut.toInt256();
-            for (uint256 i = n - 1; i > 0; i--) {
-                PathKey memory path = params.path[i];
+            for (uint256 i = n; i > 0; i--) {
+                PathKey memory path = params.path[i - 1];
 
                 (address currency0, address currency1) = path.currency
                     < currencyOut
