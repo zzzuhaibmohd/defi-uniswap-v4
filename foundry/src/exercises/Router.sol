@@ -3,7 +3,6 @@ pragma solidity 0.8.30;
 
 // import {console} from "forge-std/Test.sol";
 
-// TODO: write exercises
 import {IERC20} from "../interfaces/IERC20.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {IUnlockCallback} from "../interfaces/IUnlockCallback.sol";
