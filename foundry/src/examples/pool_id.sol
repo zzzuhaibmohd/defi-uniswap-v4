@@ -14,10 +14,10 @@ import {
 } from "../Constants.sol";
 
 /*
-forge test --match-path src/examples/PoolId.sol -vvv
+forge test --match-path src/examples/pool_id.sol -vvv
 */
 contract Example_PoolId is Test {
-    function test() public {
+    function test() public pure {
         PoolKey memory key = PoolKey({
             currency0: address(0),
             currency1: WBTC,
