@@ -53,13 +53,19 @@
 - [ ] Lock
   - `swap` -> `onlyWhenUnlocked`, `Lock`, `unlock`, `unlockCallback`, `NonzeroDeltaCount`
     - TODO: excalidraw
-- [ ] [Transient storage]()
+- [ ] [Transient storage](./foundry/src/examples/transient_storage.sol)
   - `unlock`, `Lock`, `NonzeroDeltaCount`
   - Difference from state variables
   - `Lock`, account delta, `CurrencyDelta`, `CurrencyReserve`, `NonzeroDeltaCount`
-- [ ] Account delta TODO: organize topics about account delta and currency delta
-  - take -> - (claim)
-  - settle -> + (owe)
+  - [ ] `NonzeroDeltaCount`
+    - `_accountDelta`
+      - `lib/CurrencyDelta.applyDelta`
+        - `next`
+    - [ ] [Account delta](./notes/account_delta.png)
+      - `_accountDelta`
+      - `target`
+      - take -> + (claim)
+      - settle -> - (owe)
 - [ ] Balance delta
 - [ ] Swap
   - example: swap -> sync -> pay + settle -> take
