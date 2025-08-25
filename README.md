@@ -48,8 +48,8 @@
   - ETH = address 0
   - ERC20 = token address
 - [ ] [Pool key and pool id](./foundry/src/examples/pool_id.sol)
-  - Uniswap V4 UI -> Dune
   - User defined value types
+  - [ ] How to get Pool key from Uniswap V4 UI and Dune
 
 - [ ] Lock
   - `swap` -> `onlyWhenUnlocked`, `Lock`, `unlock`, `unlockCallback`, `NonzeroDeltaCount`

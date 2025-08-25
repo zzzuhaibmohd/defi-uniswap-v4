@@ -14,6 +14,11 @@ import {
 } from "../Constants.sol";
 
 /*
+- PoolId = keccak256(PoolKey)
+- User defined value types
+  - wrap() to convert value type into user defined value type
+  - unwrap() to convert value type into user defined value type
+
 forge test --match-path src/examples/pool_id.sol -vvv
 */
 contract Example_PoolId is Test {
