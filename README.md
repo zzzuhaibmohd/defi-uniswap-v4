@@ -19,9 +19,11 @@
     - PoolManager `mapping(PoolId id => Pool.State) internal _pools`
   - Flash accounting
     - No fee on flash loans
-  - ERC6909 TODO: how is it used?
+  - [ERC6909](https://github.com/Uniswap/v4-core/blob/main/src/ERC6909.sol)
     - traders
     - liquidity providers
+    - unlock -> mint -> transfer -> settle
+    - unlock -> burn -> take
 - [ ] [Repositories](./notes/repos.png)
 
   ```
