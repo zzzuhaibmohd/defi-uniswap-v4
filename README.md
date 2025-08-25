@@ -18,6 +18,7 @@
   - Singleton
     - PoolManager `mapping(PoolId id => Pool.State) internal _pools`
   - Flash accounting
+    - No fee on flash loans
   - ERC6909 TODO: how is it used?
     - traders
     - liquidity providers
@@ -42,7 +43,9 @@
 
 # Pool manager
 
-- [ ] Goal (PoolManager -> RYO router)
+TODO: add Uni v4 links?
+
+- [ ] Goal (PoolManager -> build a swap router contract)
 - [ ] Currency = address - (ERC20 token + native token (ETH))
   - currency0 and currency1
   - ETH = address 0
@@ -50,7 +53,6 @@
 - [ ] [Pool key and pool id](./foundry/src/examples/pool_id.sol)
   - User defined value types
   - [ ] How to get Pool key from Uniswap V4 UI and Dune
-
 - [ ] Lock
   - `swap` -> `onlyWhenUnlocked`, `Lock`, `unlock`, `unlockCallback`, `NonzeroDeltaCount`
     - TODO: excalidraw?
@@ -76,10 +78,14 @@
   - [ ] Balance delta
   - [ ] [Swap Foundry example](./foundry/src/examples/swap.sol)
 - [ ] Read data
-  - extsload, exttload
-  - state view, transient state lib
-  - credits
-- [ ] Application - RYO swap router
+  - [`extsload`](https://github.com/Uniswap/v4-core/blob/main/src/Extsload.sol)
+  - [`exttload`](https://github.com/Uniswap/v4-core/blob/main/src/Exttload.sol)
+  - [`StateLibrary`](https://github.com/Uniswap/v4-core/blob/main/src/libraries/StateLibrary.sol)
+    - [`StateView`](https://github.com/Uniswap/v4-periphery/blob/main/src/lens/StateView.sol)
+  - [`TransientStateLibrary`](https://github.com/Uniswap/v4-core/blob/main/src/libraries/TransientStateLibrary.sol)
+    - [`DeltaResolver`](https://github.com/Uniswap/v4-periphery/blob/main/src/base/DeltaResolver.sol)
+  - TODO: credits
+- [ ] [Application - swap router](./foundry/exercises/swap_router.md)
 
 - [ ] TODO - code: Hooks
   - hook deployment + flags
@@ -99,3 +105,4 @@
 [Cyfrin - Uniswap V4 Swap: Deep Dive Into Execution and Accounting](https://www.cyfrin.io/blog/uniswap-v4-swap-deep-dive-into-execution-and-accounting)
 [PoolManager - storage layout](https://www.evm.codes/contract?address=0x000000000004444c5dc75cb358380d2e3de08a90)
 [Dune - How to get PoolKey from PoolId](https://dune.com/queries/5671549?category=decoded_project&namespace=uniswap_v4&blockchain=ethereum&contract=PoolManager&blockchains=ethereum&id=uniswap_v4_ethereum.poolmanager_evt_initialize)
+[Bunni](https://bunni.xyz/)
