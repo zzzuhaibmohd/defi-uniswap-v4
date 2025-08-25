@@ -18,7 +18,7 @@
   - Singleton
     - PoolManager `mapping(PoolId id => Pool.State) internal _pools`
   - Flash accounting
-  - ERC6909
+  - ERC6909 TODO: how is it used?
     - traders
     - liquidity providers
 - [ ] Repositories
@@ -42,8 +42,8 @@
 
 # Pool manager
 
-- [ ] Goal
-- [ ] Currency - (ERC20 token + native token (ETH))
+- [ ] Goal (PoolManager -> RYO router)
+- [ ] Currency = address - (ERC20 token + native token (ETH))
   - currency0 and currency1
   - ETH = address 0
   - ERC20 = token address
@@ -51,10 +51,11 @@
   - Uniswap V4 UI -> Dune
 
 - [ ] Lock
-  - `swap` -> `onlyWhenUnlocked`, `Lock`, `unlock`, `unlockCallback`
-  - transient storage
-- [ ] Transient storage
-  - difference from state variables
+  - `swap` -> `onlyWhenUnlocked`, `Lock`, `unlock`, `unlockCallback`, `NonzeroDeltaCount`
+    - TODO: excalidraw
+- [ ] [Transient storage]()
+  - `unlock`, `Lock`, `NonzeroDeltaCount`
+  - Difference from state variables
   - `Lock`, account delta, `CurrencyDelta`, `CurrencyReserve`, `NonzeroDeltaCount`
 - [ ] Account delta TODO: organize topics about account delta and currency delta
   - take -> - (claim)
@@ -70,7 +71,7 @@
   - credits
 - [ ] Application - RYO swap router
 
-- [ ] TODO: Hooks
+- [ ] TODO - code: Hooks
   - hook deployment + flags
     - `Hooks.hasPermission`
     - https://docs.uniswap.org/contracts/v4/guides/hooks/hook-deployment
