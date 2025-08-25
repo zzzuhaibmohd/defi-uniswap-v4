@@ -22,8 +22,7 @@
   - ERC6909 TODO: how is it used?
     - traders
     - liquidity providers
-- [ ] Repositories
-      TODO: excalidraw
+- [ ] [Repositories](./notes/repos.png)
 
   ```
    universal router   ->    v4 router    ->  v4-core
