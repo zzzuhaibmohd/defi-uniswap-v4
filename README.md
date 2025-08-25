@@ -47,12 +47,13 @@
   - currency0 and currency1
   - ETH = address 0
   - ERC20 = token address
-- [ ] Pool key and pool id
+- [ ] [Pool key and pool id](./foundry/src/examples/pool_id.sol)
   - Uniswap V4 UI -> Dune
+  - User defined value types
 
 - [ ] Lock
   - `swap` -> `onlyWhenUnlocked`, `Lock`, `unlock`, `unlockCallback`, `NonzeroDeltaCount`
-    - TODO: excalidraw
+    - TODO: excalidraw?
 - [ ] [Transient storage](./foundry/src/examples/transient_storage.sol)
   - `unlock`, `Lock`, `NonzeroDeltaCount`
   - Difference from state variables
@@ -66,11 +67,14 @@
       - `target`
       - take -> + (claim)
       - settle -> - (owe)
-- [ ] Balance delta
-- [ ] Swap
-  - example: swap -> sync -> pay + settle -> take
-  - Currency reserves
-  - foundry script
+      - excalidraw
+- [ ] Currency reserves
+  - `settle` -> `sync`
+- [ ] [Swap contract calls](./notes/swap.png)
+  - Example: unlock -> swap -> sync + pay + settle -> take
+    - Order of execution
+  - [ ] Balance delta
+  - [ ] [Swap Foundry example](./foundry/src/examples/swap.sol)
 - [ ] Read data
   - extsload, exttload
   - state view, transient state lib

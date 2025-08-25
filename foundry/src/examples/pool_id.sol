@@ -29,7 +29,13 @@ contract Example_PoolId is Test {
         PoolId id = PoolIdLibrary.toId(key);
 
         console.log("--- Pool id ---");
-        console.logBytes32(PoolId.unwrap(id));
+
+        // unwrap() to convert PoolId into bytes32
+        bytes32 i = PoolId.unwrap(id);
+        // wrap() to convert bytes32 into PoolId
+        PoolId p = PoolId.wrap(i);
+
+        console.logBytes32(i);
 
         assertEq(POOL_ID_ETH_WBTC, PoolId.unwrap(id));
     }
