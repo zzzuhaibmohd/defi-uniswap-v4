@@ -26,22 +26,6 @@
     - unlock -> burn -> take
 - [ ] [Repositories](./notes/repos.png)
 
-  ```
-   universal router   ->    v4 router    ->  v4-core
-  (universal-router)     (v4-periphery)     (v4-core)
-  ```
-
-  ```
-    - UniversalRouter.execute
-      - dispatch
-        - V4Router._executeActions
-          - PoolManager.unlock
-            - V4Router.unlockCallback
-              - _unlockCallback
-                  - _executeActionsWithoutUnlock
-                      - _handleActions
-  ```
-
 # Pool manager
 
 - [ ] Goal (PoolManager -> build a swap router contract)
