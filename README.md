@@ -84,7 +84,7 @@ TODO: add Uni v4 links?
     - [`StateView`](https://github.com/Uniswap/v4-periphery/blob/main/src/lens/StateView.sol)
   - [`TransientStateLibrary`](https://github.com/Uniswap/v4-core/blob/main/src/libraries/TransientStateLibrary.sol)
     - [`DeltaResolver`](https://github.com/Uniswap/v4-periphery/blob/main/src/base/DeltaResolver.sol)
-  - TODO: credits
+  - [ ] [Exercise - get currency delta](./foundry/exercises/reader.md)
 - [ ] [Application - swap router](./foundry/exercises/swap_router.md)
 
 - [ ] TODO - code: Hooks

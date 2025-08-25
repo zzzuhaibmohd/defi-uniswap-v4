@@ -20,7 +20,7 @@ function getCurrencyDelta(address target, address currency)
 
 Get the currency delta identified by `target` and `currency`.
 
-The test will take tokens from the `PoolManager` contract to check currency delta.
+The test will take tokens from the `PoolManager` contract to check the currency delta store in the `PoolManager` with the value returned from your code.
 
 ## Test
 
