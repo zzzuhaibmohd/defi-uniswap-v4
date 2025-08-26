@@ -12,11 +12,10 @@
 
 # Foundation
 
-- [ ] V4 vs V3
+- [ ] [V4 vs V3](./notes/v4.md)
   - Hooks
   - Dynamic fees
   - Singleton
-    - PoolManager `mapping(PoolId id => Pool.State) internal _pools`
   - Flash accounting
     - No fee on flash loans
   - [ERC6909](https://github.com/Uniswap/v4-core/blob/main/src/ERC6909.sol)
