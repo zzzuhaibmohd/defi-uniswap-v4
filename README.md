@@ -36,9 +36,9 @@
 - [ ] Pool key and pool id
   - [PoolKey](https://github.com/Uniswap/v4-core/blob/main/src/types/PoolKey.sol)
   - [PoolId](https://github.com/Uniswap/v4-core/blob/main/src/types/PoolId.sol)
-  - [Example](./foundry/src/examples/pool_id.sol)
-  - User defined value types
-  - [Dune - How to get PoolKey from PoolId](https://dune.com/queries/5671549?category=decoded_project&namespace=uniswap_v4&blockchain=ethereum&contract=PoolManager&blockchains=ethereum&id=uniswap_v4_ethereum.poolmanager_evt_initialize)
+  - [ ] [Example](./foundry/src/examples/pool_id.sol)
+    - User defined value types
+  - [ ] [Dune - How to get PoolKey from PoolId](https://dune.com/queries/5671549?category=decoded_project&namespace=uniswap_v4&blockchain=ethereum&contract=PoolManager&blockchains=ethereum&id=uniswap_v4_ethereum.poolmanager_evt_initialize)
 - [ ] Lock
   - [`Lock`](https://github.com/Uniswap/v4-core/blob/main/src/libraries/Lock.sol)
   - [`unlock`](https://github.com/Uniswap/v4-core/blob/59d3ecf53afa9264a16bba0e38f4c5d2231f80bc/src/PoolManager.sol#L104-L114)
@@ -63,6 +63,7 @@
 - [ ] [Swap contract calls](./notes/swap.png)
   - Example: unlock -> swap -> sync + pay + settle -> take
     - Order of execution
+    - [ ] Flash loan
   - [ ] [`BalanceDelta`](https://github.com/Uniswap/v4-core/blob/main/src/types/BalanceDelta.sol)
   - [ ] [Swap Foundry example](./foundry/src/examples/swap.sol)
 - [ ] Reading data
