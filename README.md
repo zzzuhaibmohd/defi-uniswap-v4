@@ -50,7 +50,7 @@ Please refer to this for an in-depth explanation of the content:
 - [Currency reserves](https://github.com/Uniswap/v4-core/blob/59d3ecf53afa9264a16bba0e38f4c5d2231f80bc/src/PoolManager.sol#L279-L288)
 - [Swap contract calls](./notes/swap.png)
   - [`BalanceDelta`](https://github.com/Uniswap/v4-core/blob/main/src/types/BalanceDelta.sol)
-  - [Exercise - flash loan](./foundry/exercises/flash_loan.md)
+  - [Exercise - flash loan](./foundry/exercises/flash.md)
   - [Exercise - swap](./foundry/exercises/swap.md)
 - Reading data
   - [`extsload`](https://github.com/Uniswap/v4-core/blob/main/src/Extsload.sol)
