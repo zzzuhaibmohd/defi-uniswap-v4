@@ -4,18 +4,7 @@ pragma solidity 0.8.30;
 import {Test, console} from "forge-std/Test.sol";
 import {IERC20} from "../src/interfaces/IERC20.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
-import {
-    POOL_MANAGER,
-    POSITION_MANAGER,
-    POOLS_SLOT,
-    POOL_ID_ETH_USDT,
-    POOL_ID_ETH_USDC,
-    POOL_ID_ETH_WBTC,
-    POOL_ID_WBTC_USDC,
-    USDT,
-    USDC,
-    WBTC
-} from "../src/Constants.sol";
+import {POOL_MANAGER, USDC, WBTC} from "../src/Constants.sol";
 import {TestHelper} from "./TestHelper.sol";
 import {Router} from "@exercises/Router.sol";
 
