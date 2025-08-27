@@ -6,7 +6,7 @@ The starter code for this exercise is provided in [`foundry/src/exercises/Reader
 
 Solution is in [`foundry/src/solutions/Reader.sol`](https://github.com/Cyfrin/defi-uniswap-v4/blob/main/foundry/src/solutions/Reader.sol)
 
-## Task 1 - Single hop swap exact input
+## Task 1 - Get currency delta
 
 ```solidity
 function getCurrencyDelta(address target, address currency)
