@@ -2,13 +2,8 @@
 
 # Course intro
 
-- [ ] Prerequisites
-  - Solidity
-    - Advanced Solidity to understand how to read from Uniswap V4 (`extsload`)
-    - User defined types
-  - Uniswap V3
-- [ ] Project setup
-  - v4 template?
+- [Course intro](./notes/course_intro.md)
+- [Setup](./notes/course_setup.md)
 
 # Foundation
 
