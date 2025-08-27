@@ -1,5 +1,25 @@
 # defi-uniswap-v4
 
+<div align="center">
+<p align="center">
+    <a href="https://cyfrin.io/">
+        <img src=".github/images/poweredbycyfrinbluehigher.png" width="145" alt=""/></a>
+            <a href="https://updraft.cyfrin.io/courses/defi-uniswap-v4">
+        <img src=".github/images/coursebadge.png" width="242.3" alt=""/></a>
+    <br />
+</p>
+</div>
+
+This repository houses course resources and [discussions](https://github.com/Cyfrin/defi-uniswap-v4/discussions) for the course.
+
+Please refer to this for an in-depth explanation of the content:
+
+- [Website](https://updraft.cyfrin.io) - Join Cyfrin Updraft and enjoy 50+ hours of smart contract development courses
+- [Twitter](https://twitter.com/CyfrinUpdraft) - Stay updated with the latest course releases
+- [LinkedIn](https://www.linkedin.com/school/cyfrin-updraft/) - Add Updraft to your learning experiences
+- [Discord](https://discord.gg/cyfrin) - Join a community of 3000+ developers and auditors
+- [Codehawks](https://codehawks.com) - Smart contracts auditing competitions to help secure web3
+
 # Course intro
 
 - [Course intro](./notes/course_intro.md)
