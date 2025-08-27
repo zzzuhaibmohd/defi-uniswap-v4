@@ -49,17 +49,16 @@ Please refer to this for an in-depth explanation of the content:
   - [Account delta](./notes/account_delta.png)
 - [Currency reserves](https://github.com/Uniswap/v4-core/blob/59d3ecf53afa9264a16bba0e38f4c5d2231f80bc/src/PoolManager.sol#L279-L288)
 - [Swap contract calls](./notes/swap.png)
-  - [ ] [`BalanceDelta`](https://github.com/Uniswap/v4-core/blob/main/src/types/BalanceDelta.sol)
-  - [ ] [Swap Foundry example](./foundry/src/examples/swap.sol)
-- [ ] Reading data
+  - [`BalanceDelta`](https://github.com/Uniswap/v4-core/blob/main/src/types/BalanceDelta.sol)
+- Reading data
   - [`extsload`](https://github.com/Uniswap/v4-core/blob/main/src/Extsload.sol)
   - [`exttload`](https://github.com/Uniswap/v4-core/blob/main/src/Exttload.sol)
   - [`StateLibrary`](https://github.com/Uniswap/v4-core/blob/main/src/libraries/StateLibrary.sol)
     - [`StateView`](https://github.com/Uniswap/v4-periphery/blob/main/src/lens/StateView.sol)
   - [`TransientStateLibrary`](https://github.com/Uniswap/v4-core/blob/main/src/libraries/TransientStateLibrary.sol)
     - [`DeltaResolver`](https://github.com/Uniswap/v4-periphery/blob/main/src/base/DeltaResolver.sol)
-  - [ ] [Exercise - get currency delta](./foundry/exercises/reader.md)
-- [ ] [Application - swap router](./foundry/exercises/swap_router.md)
+  - [Exercise - get currency delta](./foundry/exercises/reader.md)
+- [Application - swap router](./foundry/exercises/swap_router.md)
 
 # Resources
 
