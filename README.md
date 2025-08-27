@@ -1,6 +1,7 @@
 # defi-uniswap-v4
 
 <div align="center">
+<img src=".github/images/uni.png" width="145" alt=""/>
 <p align="center">
     <a href="https://cyfrin.io/">
         <img src=".github/images/poweredbycyfrinbluehigher.png" width="145" alt=""/></a>
