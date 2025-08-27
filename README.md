@@ -12,58 +12,27 @@
 
 # Foundation
 
-- [ ] [V4 vs V3](./notes/v4.md)
-  - Hooks
-  - Dynamic fees
-  - Singleton
-  - Flash accounting
-    - No fee on flash loans
-  - [ERC6909](https://github.com/Uniswap/v4-core/blob/main/src/ERC6909.sol)
-    - traders
-    - liquidity providers
-    - unlock -> mint -> transfer -> settle
-    - unlock -> burn -> take
-- [ ] [Repositories](./notes/repos.png)
+- [V4 vs V3](./notes/v4.md)
+- [Repositories](./notes/repos.png)
 
 # Pool manager
 
-- [ ] Goal (PoolManager -> build a swap router contract)
-- [ ] [Currency](https://github.com/Uniswap/v4-core/blob/main/src/types/Currency.sol)
-  - address - (ERC20 token + native token (ETH))
-  - currency0 and currency1
-  - ETH = address 0
-  - ERC20 = token address
-- [ ] Pool key and pool id
+- [Currency](https://github.com/Uniswap/v4-core/blob/main/src/types/Currency.sol)
+- Pool key and pool id
   - [PoolKey](https://github.com/Uniswap/v4-core/blob/main/src/types/PoolKey.sol)
   - [PoolId](https://github.com/Uniswap/v4-core/blob/main/src/types/PoolId.sol)
-  - [ ] [Example](./foundry/src/examples/pool_id.sol)
-    - User defined value types
-  - [ ] [Dune - How to get PoolKey from PoolId](https://dune.com/queries/5671549?category=decoded_project&namespace=uniswap_v4&blockchain=ethereum&contract=PoolManager&blockchains=ethereum&id=uniswap_v4_ethereum.poolmanager_evt_initialize)
-- [ ] Lock
+  - [Example](./foundry/src/examples/pool_id.sol)
+  - [Dune - How to get PoolKey from PoolId](https://dune.com/queries/5671549?category=decoded_project&namespace=uniswap_v4&blockchain=ethereum&contract=PoolManager&blockchains=ethereum&id=uniswap_v4_ethereum.poolmanager_evt_initialize)
+- Lock
   - [`Lock`](https://github.com/Uniswap/v4-core/blob/main/src/libraries/Lock.sol)
   - [`unlock`](https://github.com/Uniswap/v4-core/blob/59d3ecf53afa9264a16bba0e38f4c5d2231f80bc/src/PoolManager.sol#L104-L114)
   - [`NonzeroDeltaCount`](https://github.com/Uniswap/v4-core/blob/main/src/libraries/NonzeroDeltaCount.sol)
-  - `swap` -> `onlyWhenUnlocked`, `Lock`, `unlock`, `unlockCallback`, `NonzeroDeltaCount`
-- [ ] [Transient storage](./foundry/src/examples/transient_storage.sol)
-  - `unlock`, `Lock`, `NonzeroDeltaCount`
-  - Difference from state variables
-  - `Lock`, account delta, `CurrencyDelta`, `CurrencyReserve`, `NonzeroDeltaCount`
-  - [ ] [`NonzeroDeltaCount`](https://github.com/Uniswap/v4-core/blob/main/src/libraries/NonzeroDeltaCount.sol)
-    - [`_accountDelta`](https://github.com/Uniswap/v4-core/blob/59d3ecf53afa9264a16bba0e38f4c5d2231f80bc/src/PoolManager.sol#L368-L378)
-      - `lib/CurrencyDelta.applyDelta`
-        - `next`
-    - [ ] [Account delta](./notes/account_delta.png)
-      - `_accountDelta`
-      - `target`
-      - take -> + (claim)
-      - settle -> - (owe)
-      - excalidraw
-- [ ] [Currency reserves](https://github.com/Uniswap/v4-core/blob/59d3ecf53afa9264a16bba0e38f4c5d2231f80bc/src/PoolManager.sol#L279-L288)
-  - `settle` -> `sync`
-- [ ] [Swap contract calls](./notes/swap.png)
-  - Example: unlock -> swap -> sync + pay + settle -> take
-    - Order of execution
-    - [ ] Flash loan
+- [Transient storage](./foundry/src/examples/transient_storage.sol)
+  - [`NonzeroDeltaCount`](https://github.com/Uniswap/v4-core/blob/main/src/libraries/NonzeroDeltaCount.sol)
+  - [`_accountDelta`](https://github.com/Uniswap/v4-core/blob/59d3ecf53afa9264a16bba0e38f4c5d2231f80bc/src/PoolManager.sol#L368-L378)
+  - [Account delta](./notes/account_delta.png)
+- [Currency reserves](https://github.com/Uniswap/v4-core/blob/59d3ecf53afa9264a16bba0e38f4c5d2231f80bc/src/PoolManager.sol#L279-L288)
+- [Swap contract calls](./notes/swap.png)
   - [ ] [`BalanceDelta`](https://github.com/Uniswap/v4-core/blob/main/src/types/BalanceDelta.sol)
   - [ ] [Swap Foundry example](./foundry/src/examples/swap.sol)
 - [ ] Reading data
@@ -75,11 +44,6 @@
     - [`DeltaResolver`](https://github.com/Uniswap/v4-periphery/blob/main/src/base/DeltaResolver.sol)
   - [ ] [Exercise - get currency delta](./foundry/exercises/reader.md)
 - [ ] [Application - swap router](./foundry/exercises/swap_router.md)
-
-- [ ] TODO - code: Hooks
-  - hook deployment + flags
-    - `Hooks.hasPermission`
-    - https://docs.uniswap.org/contracts/v4/guides/hooks/hook-deployment
 
 # Resources
 
