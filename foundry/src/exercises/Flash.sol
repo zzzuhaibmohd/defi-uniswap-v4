@@ -32,30 +32,11 @@ contract Flash is IUnlockCallback {
         onlyPoolManager
         returns (bytes memory)
     {
-        (address currency, uint256 amount) =
-            abi.decode(data, (address, uint256));
-
-        // Borrow
-        poolManager.take({currency: currency, to: address(this), amount: amount});
-
-        // You would write your flash loan logic here
-        (bool ok,) = tester.call("");
-        require(ok, "test failed");
-
-        // Repay
-        poolManager.sync(currency);
-
-        if (currency == address(0)) {
-            poolManager.settle{value: amount}();
-        } else {
-            IERC20(currency).transfer(address(poolManager), amount);
-            poolManager.settle();
-        }
-
+        // Write your code here
         return "";
     }
 
     function flash(address currency, uint256 amount) external {
-        poolManager.unlock(abi.encode(currency, amount));
+        // Write your code here
     }
 }
