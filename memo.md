@@ -1,8 +1,5 @@
 foundry
 
-- [ ] [Swap Foundry example](./foundry/src/examples/swap.sol)
-- [ ] TODO: flash loan exercise
-
 - [ ] TODO - code: Hooks
   - hook deployment + flags
     - `Hooks.hasPermission`

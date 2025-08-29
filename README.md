@@ -26,7 +26,7 @@ Please refer to this for an in-depth explanation of the content:
 - [Course intro](./notes/course_intro.md)
 - [Setup](./notes/course_setup.md)
 
-# Foundation
+# Overview
 
 - [V4 vs V3](./notes/v4.md)
 - [Repositories](./notes/repos.png)
