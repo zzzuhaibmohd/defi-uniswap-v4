@@ -38,7 +38,7 @@ https://github.com/eugenioclrc/limit-order-hooks/blob/main/src/TakeProfitsHook.s
   - Limit orders
   - Dynamic fees set before or after swaps
   - TODO: Custom AMM curves?
-    - Core pool math = fixed constant-product (concentrated liquidity).
+    - https://docs.uniswap.org/contracts/v4/quickstart/hooks/async-swap
   - Auto rebalancing liquidity
 
 - TODO: how is hook flags encoded into the hook address?
