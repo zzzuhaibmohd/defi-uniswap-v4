@@ -10,7 +10,7 @@ foundry
 - msg.sender?
 - Exercise?
 
-TODO - limit order book
+TODO: - limit order book
 Uni v4
 https://medium.com/tokamak-network/uniswap-v4-limit-order-hook-part-1-586233620584
 
@@ -49,6 +49,8 @@ https://github.com/eugenioclrc/limit-order-hooks/blob/main/src/TakeProfitsHook.s
     - [Flags](https://github.com/Uniswap/v4-core/blob/59d3ecf53afa9264a16bba0e38f4c5d2231f80bc/src/libraries/Hooks.sol#L27-L47)
     - [`hasPermission`](https://github.com/Uniswap/v4-core/blob/59d3ecf53afa9264a16bba0e38f4c5d2231f80bc/src/libraries/Hooks.sol#L337-L339)
   - [`HookMiner`](https://github.com/Uniswap/v4-periphery/blob/main/src/utils/HookMiner.sol)
+
+- Access msg.sender from inside a hook
 
 - Example
   - HookMiner
