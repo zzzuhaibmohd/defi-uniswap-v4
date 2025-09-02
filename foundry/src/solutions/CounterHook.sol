@@ -21,15 +21,12 @@ import {
 contract CounterHook {
     using PoolIdLibrary for PoolKey;
 
-    IPoolManager public immutable poolManager;
-
-    mapping(PoolId => uint256 count) public beforeSwapCount;
-    mapping(PoolId => uint256 count) public afterSwapCount;
-    mapping(PoolId => uint256 count) public beforeAddLiquidityCount;
-    mapping(PoolId => uint256 count) public beforeRemoveLiquidityCount;
-
     error NotPoolManager();
     error HookNotImplemented();
+
+    IPoolManager public immutable poolManager;
+
+    mapping(PoolId => mapping(string => uint256)) public counts;
 
     modifier onlyPoolManager() {
         if (msg.sender != address(poolManager)) revert NotPoolManager();
@@ -38,6 +35,7 @@ contract CounterHook {
 
     constructor(address _poolManager) {
         poolManager = IPoolManager(_poolManager);
+        Hooks.validateHookPermissions(address(this), getHookPermissions());
     }
 
     function getHookPermissions()
@@ -86,7 +84,7 @@ contract CounterHook {
         SwapParams calldata params,
         bytes calldata hookData
     ) external onlyPoolManager returns (bytes4, BeforeSwapDelta, uint24) {
-        beforeSwapCount[key.toId()]++;
+        counts[key.toId()]["beforeSwap"]++;
         return (this.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, 0);
     }
 
@@ -97,7 +95,7 @@ contract CounterHook {
         BalanceDelta delta,
         bytes calldata hookData
     ) external onlyPoolManager returns (bytes4, int128) {
-        afterSwapCount[key.toId()]++;
+        counts[key.toId()]["afterSwap"]++;
         return (this.afterSwap.selector, 0);
     }
 
@@ -107,7 +105,7 @@ contract CounterHook {
         ModifyLiquidityParams calldata params,
         bytes calldata hookData
     ) external onlyPoolManager returns (bytes4) {
-        beforeAddLiquidityCount[key.toId()]++;
+        counts[key.toId()]["beforeAddLiquidity"]++;
         return this.beforeAddLiquidity.selector;
     }
 
@@ -128,7 +126,7 @@ contract CounterHook {
         ModifyLiquidityParams calldata params,
         bytes calldata hookData
     ) external onlyPoolManager returns (bytes4) {
-        beforeRemoveLiquidityCount[key.toId()]++;
+        counts[key.toId()]["beforeRemoveLiquidity"]++;
         return this.beforeRemoveLiquidity.selector;
     }
 
