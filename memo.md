@@ -10,12 +10,6 @@ foundry
 - msg.sender?
 - Exercise?
 
-TODO: - limit order book
-Uni v4
-https://medium.com/tokamak-network/uniswap-v4-limit-order-hook-part-1-586233620584
-
-https://github.com/eugenioclrc/limit-order-hooks/blob/main/src/TakeProfitsHook.sol
-
 ### Hooks
 
 - [ ] Key concepts
@@ -54,6 +48,15 @@ https://github.com/eugenioclrc/limit-order-hooks/blob/main/src/TakeProfitsHook.s
 - TODO: Access msg.sender from inside a hook
 - TODO: CounterHook exercises
 - TODO: limit order?
+  - what is a limit order
+
+TODO: - limit order book
+Uni v4
+https://medium.com/tokamak-network/uniswap-v4-limit-order-hook-part-1-586233620584
+
+https://github.com/eugenioclrc/limit-order-hooks/blob/main/src/TakeProfitsHook.sol
+
+https://github.com/Uniswap/v4-periphery/blob/6d955a3aea125808d4c3661a6c09339ec9206120/contracts/hooks/examples/LimitOrder.sol
 
 - Example
   - [`BaseHook`](https://github.com/Uniswap/v4-periphery/blob/main/src/utils/BaseHook.sol)
