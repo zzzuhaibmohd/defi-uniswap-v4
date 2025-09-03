@@ -23,6 +23,15 @@ import {
 } from "../src/Constants.sol";
 import {CounterHook} from "@exercises/CounterHook.sol";
 
+/*
+1. Run script/CounterCode.s.sol to print creation code, constructor args and flags
+2. Run test/HookAddr.test.sol to find salt
+3. Set salt
+export SALT=
+4. Run this test
+forge test --fork-url $FORK_URL --match-path test/CounterHook.test.sol -vvv
+*/
+
 contract CounterHookTest is Test {
     using PoolIdLibrary for PoolKey;
     using BalanceDeltaLibrary for BalanceDelta;
@@ -34,6 +43,7 @@ contract CounterHookTest is Test {
     PoolKey key;
     CounterHook hook;
 
+    int24 constant TICK_SPACING = 10;
     int256 constant LIQUIDITY_DELTA = 1e12;
 
     uint256 constant SWAP = 1;
@@ -51,7 +61,7 @@ contract CounterHookTest is Test {
             currency0: address(0),
             currency1: USDC,
             fee: 500,
-            tickSpacing: 10,
+            tickSpacing: TICK_SPACING,
             hooks: address(hook)
         });
 
@@ -71,8 +81,8 @@ contract CounterHookTest is Test {
             (int256 d,) = poolManager.modifyLiquidity({
                 key: key,
                 params: ModifyLiquidityParams({
-                    tickLower: MIN_TICK,
-                    tickUpper: MAX_TICK,
+                    tickLower: MIN_TICK / TICK_SPACING * TICK_SPACING,
+                    tickUpper: MAX_TICK / TICK_SPACING * TICK_SPACING,
                     liquidityDelta: LIQUIDITY_DELTA,
                     salt: bytes32(0)
                 }),
@@ -81,21 +91,25 @@ contract CounterHookTest is Test {
             BalanceDelta delta = BalanceDelta.wrap(d);
             if (delta.amount0() < 0) {
                 uint256 amount0 = uint128(-delta.amount0());
+                console.log("Add liquidity amount 0: %e", amount0);
                 poolManager.sync(key.currency0);
                 poolManager.settle{value: amount0}();
             }
             if (delta.amount1() < 0) {
                 uint256 amount1 = uint128(-delta.amount1());
+                console.log("Add liquidity amount 1: %e", amount1);
+                deal(USDC, address(this), amount1);
                 poolManager.sync(key.currency1);
                 usdc.transfer(address(poolManager), amount1);
                 poolManager.settle();
             }
+            return "";
         } else if (action == REMOVE_LIQUIDITY) {
             (int256 d,) = poolManager.modifyLiquidity({
                 key: key,
                 params: ModifyLiquidityParams({
-                    tickLower: MIN_TICK,
-                    tickUpper: MAX_TICK,
+                    tickLower: MIN_TICK / TICK_SPACING * TICK_SPACING,
+                    tickUpper: MAX_TICK / TICK_SPACING * TICK_SPACING,
                     liquidityDelta: -LIQUIDITY_DELTA,
                     salt: bytes32(0)
                 }),
@@ -104,12 +118,15 @@ contract CounterHookTest is Test {
             BalanceDelta delta = BalanceDelta.wrap(d);
             if (delta.amount0() > 0) {
                 uint256 amount0 = uint128(delta.amount0());
+                console.log("Remove liquidity amount 0: %e", amount0);
                 poolManager.take(key.currency0, address(this), amount0);
             }
             if (delta.amount1() > 0) {
                 uint256 amount1 = uint128(delta.amount1());
+                console.log("Remove liquidity amount 1: %e", amount1);
                 poolManager.take(key.currency1, address(this), amount1);
             }
+            return "";
         } else if (action == SWAP) {
             // Swap ETH -> USDC
             uint256 bal = usdc.balanceOf(address(this));
@@ -147,27 +164,31 @@ contract CounterHookTest is Test {
 
             poolManager.sync(currencyIn);
             poolManager.settle{value: amountIn}();
+            return "";
         }
+
         revert("Invalid action");
     }
 
-    function test_before_add_liquidity() public {
+    function test_permissions() public {
+        Hooks.validateHookPermissions(address(hook), hook.getHookPermissions());
+    }
+
+    function test_liquidity() public {
         action = ADD_LIQUIDITY;
         poolManager.unlock("");
         assertEq(hook.counts(key.toId(), "beforeAddLiquidity"), 1);
         assertEq(hook.counts(key.toId(), "afterAddLiquidity"), 0);
-    }
 
-    function test_before_remove_liquidity() public {
         action = REMOVE_LIQUIDITY;
         poolManager.unlock("");
         assertEq(hook.counts(key.toId(), "beforeRemoveLiquidity"), 1);
         assertEq(hook.counts(key.toId(), "afterRemoveLiquidity"), 0);
     }
 
-    function test_before_and_after_swap() public {
+    function test_swap() public {
         action = SWAP;
-        // TODO: mint
+        deal(USDC, address(this), 100 * 1e6);
         poolManager.unlock("");
         assertEq(hook.counts(key.toId(), "beforeSwap"), 1);
         assertEq(hook.counts(key.toId(), "afterSwap"), 1);
