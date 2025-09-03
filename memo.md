@@ -18,7 +18,7 @@ https://github.com/eugenioclrc/limit-order-hooks/blob/main/src/TakeProfitsHook.s
 
 ### Hooks
 
-- Key concepts
+- [ ] Key concepts
   - External contract calls before and after pool operations such as swap and liquidity modifications
     - [`IHooks`](https://github.com/Uniswap/v4-core/blob/main/src/interfaces/IHooks.sol)
       - `beforeInitialize`
@@ -44,14 +44,16 @@ https://github.com/eugenioclrc/limit-order-hooks/blob/main/src/TakeProfitsHook.s
     - TODO: Auto rebalancing liquidity example?
   - Hooks contract address encodes which hook functions it implements
 
-- How are hook flags encoded into the hooks address?
+- [ ] How are hook flags encoded into the hooks address?
   - bottom 14 bits
     - [Flags](https://github.com/Uniswap/v4-core/blob/59d3ecf53afa9264a16bba0e38f4c5d2231f80bc/src/libraries/Hooks.sol#L27-L47)
     - [`hasPermission`](https://github.com/Uniswap/v4-core/blob/59d3ecf53afa9264a16bba0e38f4c5d2231f80bc/src/libraries/Hooks.sol#L337-L339)
   - [`HookMiner`](https://github.com/Uniswap/v4-periphery/blob/main/src/utils/HookMiner.sol)
+    - script
 
-- Access msg.sender from inside a hook
+- TODO: Access msg.sender from inside a hook
+- TODO: CounterHook exercises
+- TODO: limit order?
 
 - Example
-  - HookMiner
   - [`BaseHook`](https://github.com/Uniswap/v4-periphery/blob/main/src/utils/BaseHook.sol)
