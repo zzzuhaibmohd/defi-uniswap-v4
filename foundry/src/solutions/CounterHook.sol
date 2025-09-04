@@ -8,8 +8,8 @@ pragma solidity 0.8.30;
 // https://github.com/Uniswap/v4-core/blob/main/src/interfaces/IHooks.sol
 
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
-import {PoolId, PoolIdLibrary} from "../libraries/PoolId.sol";
 import {Hooks} from "../libraries/Hooks.sol";
+import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {SwapParams, ModifyLiquidityParams} from "../types/PoolOperation.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";

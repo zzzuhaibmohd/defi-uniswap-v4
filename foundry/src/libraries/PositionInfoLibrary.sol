@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
+import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
 import {PoolKey} from "../types/PoolKey.sol";
-import {PoolId, PoolIdLibrary} from "./PoolId.sol";
 
 type PositionInfo is uint256;
 

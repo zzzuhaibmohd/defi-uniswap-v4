@@ -3,7 +3,7 @@ pragma solidity 0.8.30;
 
 import {Test, console} from "forge-std/Test.sol";
 import {PoolKey} from "../types/PoolKey.sol";
-import {PoolId, PoolIdLibrary} from "../libraries/PoolId.sol";
+import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
 import {
     POOL_ID_ETH_USDT,
     POOL_ID_ETH_USDC,

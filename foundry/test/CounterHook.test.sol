@@ -6,7 +6,7 @@ import {IERC20} from "../src/interfaces/IERC20.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {SafeCast} from "../src/libraries/SafeCast.sol";
 import {Hooks} from "../src/libraries/Hooks.sol";
-import {PoolId, PoolIdLibrary} from "../src/libraries/PoolId.sol";
+import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
 import {
     SwapParams, ModifyLiquidityParams
