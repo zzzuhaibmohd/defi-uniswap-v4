@@ -30,7 +30,40 @@ contract LimitOrder is TStore {
     uint256 constant ADD_LIQUIDITY = 1;
     uint256 constant REMOVE_LIQUIDITY = 2;
 
-    // TODO: events
+    event Place(
+        bytes32 indexed poolId,
+        uint256 indexed slot,
+        address indexed user,
+        int24 tickLower,
+        bool zeroForOne,
+        uint128 liquidity
+    );
+    event Cancel(
+        bytes32 indexed poolId,
+        uint256 indexed slot,
+        address indexed user,
+        int24 tickLower,
+        bool zeroForOne,
+        uint128 liquidity
+    );
+    event Take(
+        bytes32 indexed poolId,
+        uint256 indexed slot,
+        address indexed user,
+        int24 tickLower,
+        bool zeroForOne,
+        uint256 amount0,
+        uint256 amount1
+    );
+    event Fill(
+        bytes32 indexed poolId,
+        uint256 indexed slot,
+        int24 tickLower,
+        bool zeroForOne,
+        uint256 amount0,
+        uint256 amount1
+    );
+
     // Bucket of limit orders
     struct Bucket {
         bool filled;
@@ -125,54 +158,30 @@ contract LimitOrder is TStore {
             Bucket storage bucket = buckets[id][s];
             if (bucket.liquidity > 0) {
                 slots[id] = s + 1;
-                (uint256 amount0, uint256 amount1) = removeLiquidity(
-                    // TODO: safe cast
+                (uint256 amount0, uint256 amount1,,) = removeLiquidity(
                     key,
                     lower,
-                    -int256(uint256(bucket.liquidity)),
-                    address(this)
+                    // TODO: safe cast
+                    -int256(uint256(bucket.liquidity))
                 );
                 bucket.filled = true;
                 bucket.amount0 += amount0;
                 bucket.amount1 += amount1;
+                emit Fill(
+                    PoolId.unwrap(poolId),
+                    s,
+                    lower,
+                    zeroForOne,
+                    bucket.amount0,
+                    bucket.amount1
+                );
             }
             lower += key.tickSpacing;
         }
 
         ticks[poolId] = tick;
 
-        // TODO: params
         return (this.afterSwap.selector, 0);
-    }
-
-    function removeLiquidity(
-        PoolKey memory key,
-        int24 tickLower,
-        int256 liquidity,
-        address dst
-    ) private returns (uint256, uint256) {
-        (int256 d,) = poolManager.modifyLiquidity({
-            key: key,
-            params: ModifyLiquidityParams({
-                tickLower: tickLower,
-                tickUpper: tickLower + key.tickSpacing,
-                liquidityDelta: liquidity,
-                salt: bytes32(0)
-            }),
-            hookData: ""
-        });
-        BalanceDelta delta = BalanceDelta.wrap(d);
-        uint256 amount0;
-        uint256 amount1;
-        if (delta.amount0() > 0) {
-            amount0 = uint256(uint128(delta.amount0()));
-            poolManager.take(key.currency0, dst, amount0);
-        }
-        if (delta.amount1() > 0) {
-            amount1 = uint256(uint128(delta.amount1()));
-            poolManager.take(key.currency1, dst, amount1);
-        }
-        return (amount0, amount1);
     }
 
     function unlockCallback(bytes calldata data)
@@ -247,17 +256,26 @@ contract LimitOrder is TStore {
                 uint128 liquidityRemaining
             ) = abi.decode(data, (address, PoolKey, int24, uint128, uint128));
 
-            // Claim fees
-            uint256 fee0;
-            uint256 fee1;
+            (uint256 amount0, uint256 amount1, uint256 fee0, uint256 fee1) =
+                removeLiquidity(key, tickLower, -int256(uint256(size)));
+
             if (liquidityRemaining > 0) {
-                (fee0, fee1) = removeLiquidity(key, tickLower, 0, address(this));
+                if (amount0 - fee0 > 0) {
+                    key.currency0.transferOut(msgSender, amount0 - fee0);
+                }
+                if (amount1 - fee1 > 0) {
+                    key.currency1.transferOut(msgSender, amount1 - fee1);
+                }
+                return abi.encode(fee0, fee1);
+            } else {
+                if (amount0 > 0) {
+                    key.currency0.transferOut(msgSender, amount0);
+                }
+                if (amount1 > 0) {
+                    key.currency1.transferOut(msgSender, amount1);
+                }
+                return abi.encode(uint256(0), uint256(0));
             }
-
-            // Remove liquidity for msg.sender
-            removeLiquidity(key, tickLower, -int256(uint256(size)), msgSender);
-
-            return abi.encode(fee0, fee1);
         }
         revert("Invalid action");
     }
@@ -282,19 +300,30 @@ contract LimitOrder is TStore {
             abi.encode(msg.sender, msg.value, key, tickLower, liquidity)
         );
 
-        bytes32 id = getBucketId(key.toId(), tickLower, zeroForOne);
+        PoolId poolId = key.toId();
+        bytes32 id = getBucketId(poolId, tickLower, zeroForOne);
         uint256 slot = slots[id];
 
         Bucket storage bucket = buckets[id][slot];
         bucket.liquidity += liquidity;
         bucket.sizes[msg.sender] += liquidity;
+
+        emit Place(
+            PoolId.unwrap(poolId),
+            slot,
+            msg.sender,
+            tickLower,
+            zeroForOne,
+            liquidity
+        );
     }
 
     function cancel(PoolKey calldata key, int24 tickLower, bool zeroForOne)
         external
         setAction(REMOVE_LIQUIDITY)
     {
-        bytes32 id = getBucketId(key.toId(), tickLower, zeroForOne);
+        PoolId poolId = key.toId();
+        bytes32 id = getBucketId(poolId, tickLower, zeroForOne);
         uint256 slot = slots[id];
         Bucket storage bucket = buckets[id][slot];
         require(!bucket.filled, "bucket filled");
@@ -314,6 +343,10 @@ contract LimitOrder is TStore {
             bucket.amount0 += fee0;
             bucket.amount1 += fee1;
         }
+
+        emit Cancel(
+            PoolId.unwrap(poolId), slot, msg.sender, tickLower, zeroForOne, size
+        );
     }
 
     function take(
@@ -322,7 +355,8 @@ contract LimitOrder is TStore {
         bool zeroForOne,
         uint256 slot
     ) external {
-        bytes32 id = getBucketId(key.toId(), tickLower, zeroForOne);
+        PoolId poolId = key.toId();
+        bytes32 id = getBucketId(poolId, tickLower, zeroForOne);
         Bucket storage bucket = buckets[id][slot];
         require(bucket.filled, "bucket not filled");
 
@@ -340,6 +374,16 @@ contract LimitOrder is TStore {
         if (amount1 > 0) {
             key.currency1.transferOut(msg.sender, amount1);
         }
+
+        emit Take(
+            PoolId.unwrap(poolId),
+            slot,
+            msg.sender,
+            tickLower,
+            zeroForOne,
+            amount0,
+            amount1
+        );
     }
 
     function getTick(PoolId poolId) private view returns (int24 tick) {
@@ -373,6 +417,45 @@ contract LimitOrder is TStore {
         } else {
             lower = l1 + tickSpacing;
             upper = l0;
+        }
+    }
+
+    function removeLiquidity(
+        PoolKey memory key,
+        int24 tickLower,
+        int256 liquidity
+    )
+        private
+        returns (uint256 amount0, uint256 amount1, uint256 fee0, uint256 fee1)
+    {
+        (int256 d, int256 f) = poolManager.modifyLiquidity({
+            key: key,
+            params: ModifyLiquidityParams({
+                tickLower: tickLower,
+                tickUpper: tickLower + key.tickSpacing,
+                liquidityDelta: liquidity,
+                salt: bytes32(0)
+            }),
+            hookData: ""
+        });
+
+        // delta includes fee0 and fee1
+        BalanceDelta delta = BalanceDelta.wrap(d);
+        if (delta.amount0() > 0) {
+            amount0 = uint256(uint128(delta.amount0()));
+            poolManager.take(key.currency0, address(this), amount0);
+        }
+        if (delta.amount1() > 0) {
+            amount1 = uint256(uint128(delta.amount1()));
+            poolManager.take(key.currency1, address(this), amount1);
+        }
+
+        BalanceDelta fees = BalanceDelta.wrap(d);
+        if (fees.amount0() > 0) {
+            fee0 = uint256(uint128(fees.amount0()));
+        }
+        if (fees.amount1() > 0) {
+            fee1 = uint256(uint128(fees.amount1()));
         }
     }
 
