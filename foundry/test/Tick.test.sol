@@ -3,35 +3,26 @@ pragma solidity 0.8.30;
 
 import {Test, console} from "forge-std/Test.sol";
 
-int24 constant TICK_SPACING = 10;
+// Tick spacing
+int24 constant S = 10;
 
 contract TickLast {
-    int24 tickLowerLast;
-
-    function swap(int24 tick) public {
-        (int24 tickLower, int24 lower, int24 upper) =
-            getCrossedTicks(tick, TICK_SPACING, tickLowerLast);
-
-        while (lower <= upper) {
-            lower += TICK_SPACING;
-        }
-
-        tickLowerLast = tickLower;
-    }
-
-    function getCrossedTicks(int24 tick, int24 tickSpacing, int24 tickLowerLast)
+    function getTickRange(int24 tick0, int24 tick1, int24 tickSpacing)
         public
         pure
-        returns (int24 tickLower, int24 lower, int24 upper)
+        returns (int24 lower, int24 upper)
     {
-        tickLower = getTickLower(tick, tickSpacing);
+        // Last lower tick
+        int24 l0 = getTickLower(tick0, tickSpacing);
+        // Current lower tick
+        int24 l1 = getTickLower(tick1, tickSpacing);
 
-        if (tickLowerLast <= tickLower) {
-            lower = tickLowerLast;
-            upper = tickLower - tickSpacing;
+        if (tick0 <= tick1) {
+            lower = l0;
+            upper = l1 - tickSpacing;
         } else {
-            lower = tickLower + tickSpacing;
-            upper = tickLowerLast;
+            lower = l1 + tickSpacing;
+            upper = l0;
         }
     }
 
@@ -55,29 +46,44 @@ contract TickLastTest is Test {
     }
 
     function test() public {
-        int24[5][10] memory tests = [
-            // tick, tickLowerLast, tickLower, lower, upper
-            [int24(1), 0, 0, 0, -TICK_SPACING],
-            [TICK_SPACING, 0, TICK_SPACING, 0, 0],
-            [TICK_SPACING + 1, 0, TICK_SPACING, 0, 0],
-            [2 * TICK_SPACING, 0, 2 * TICK_SPACING, 0, TICK_SPACING],
-            [2 * TICK_SPACING + 1, 0, 2 * TICK_SPACING, 0, TICK_SPACING],
-            // TODO: correct?
-            [int24(-1), 0, -TICK_SPACING, 0, 0],
-            [-TICK_SPACING, 0, -TICK_SPACING, 0, 0],
-            [-(TICK_SPACING + 1), 0, -2 * TICK_SPACING, -TICK_SPACING, 0],
-            [-2 * TICK_SPACING, 0, -2 * TICK_SPACING, -TICK_SPACING, 0],
-            [-(2 * TICK_SPACING + 1), 0, -3 * TICK_SPACING, -2 * TICK_SPACING, 0]
+        int24[4][24] memory tests = [
+            // tick 0 <= tick 1
+            [int24(0), 0, 0, -10],
+            [int24(0), 1, 0, -10],
+            [int24(0), 10, 0, 0],
+            [int24(0), 11, 0, 0],
+            [int24(0), 20, 0, 10],
+            [int24(0), 21, 0, 10],
+            // tick 0 <= tick 1
+            [int24(1), 1, 0, -10],
+            [int24(1), 2, 0, -10],
+            [int24(1), 10, 0, 0],
+            [int24(1), 11, 0, 0],
+            [int24(1), 20, 0, 10],
+            [int24(1), 21, 0, 10],
+            // tick 1 > tick 0
+            [int24(0), 0, 0, -10],
+            [int24(0), -1, 0, 0],
+            [int24(0), -10, 0, 0],
+            [int24(0), -11, -10, 0],
+            [int24(0), -20, -10, 0],
+            [int24(0), -21, -20, 0],
+            // tick 1 > tick 0
+            [int24(-1), -1, -10, -20],
+            [int24(-1), -2, 0, -10],
+            [int24(-1), -10, 0, -10],
+            [int24(-1), -11, -10, -10],
+            [int24(-1), -20, -10, -10],
+            [int24(-1), -21, -20, -10]
         ];
 
         for (uint256 i = 0; i < tests.length; i++) {
-            int24 tick = tests[i][0];
-            int24 tickLowerLast = tests[i][1];
-            (int24 tickLower, int24 lower, int24 upper) =
-                t.getCrossedTicks(tick, TICK_SPACING, tickLowerLast);
-            assertEq(tickLower, tests[i][2], "tick lower");
-            assertEq(lower, tests[i][3], "lower");
-            assertEq(upper, tests[i][4], "upper");
+            int24 tickLast = tests[i][0];
+            int24 tick = tests[i][1];
+            (int24 lower, int24 upper) = t.getTickRange(tickLast, tick, S);
+            // console.log("i", i);
+            assertEq(lower, tests[i][2], "lower");
+            assertEq(upper, tests[i][3], "upper");
         }
     }
 }
