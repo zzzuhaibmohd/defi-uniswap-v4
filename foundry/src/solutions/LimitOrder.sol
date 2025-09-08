@@ -33,6 +33,7 @@ contract LimitOrder is TStore {
     // TODO: events
     // Bucket of limit orders
     struct Bucket {
+        bool filled;
         uint256 amount0;
         uint256 amount1;
         // Total liquidity
@@ -47,7 +48,7 @@ contract LimitOrder is TStore {
     mapping(bytes32 => uint256) public slots;
     // Bucket id => slot => Bucket
     mapping(bytes32 => mapping(uint256 => Bucket)) public buckets;
-    // Pool id => last lower tick
+    // Pool id => last tick
     mapping(PoolId => int24) public ticks;
 
     modifier onlyPoolManager() {
@@ -59,6 +60,8 @@ contract LimitOrder is TStore {
         poolManager = IPoolManager(_poolManager);
         Hooks.validateHookPermissions(address(this), getHookPermissions());
     }
+
+    receive() external payable {}
 
     function getHookPermissions()
         public
@@ -89,7 +92,7 @@ contract LimitOrder is TStore {
         uint160 sqrtPriceX96,
         int24 tick
     ) external onlyPoolManager returns (bytes4) {
-        ticks[key.toId()] = getTickLower(tick, key.tickSpacing);
+        ticks[key.toId()] = tick;
         return this.afterInitialize.selector;
     }
 
@@ -106,29 +109,70 @@ contract LimitOrder is TStore {
         returns (bytes4, int128)
     {
         PoolId poolId = key.toId();
-        // Current tick lower
-        int24 tickLower = getTickLower(getTick(poolId), key.tickSpacing);
-        int24 tickLowerLast = ticks[poolId];
+        int24 tick = getTick(poolId);
 
-        (int24 lower, int24 upper) = tickLowerLast < tickLower
-            ? (tickLowerLast, tickLower)
-            : (tickLower, tickLowerLast);
+        (int24 lower, int24 upper) =
+            getTickRange(ticks[poolId], tick, key.tickSpacing);
+
+        if (upper < lower) {
+            return (this.afterSwap.selector, 0);
+        }
 
         bool zeroForOne = !params.zeroForOne;
-        while (lower < upper) {
+        while (lower <= upper) {
             bytes32 id = getBucketId(poolId, lower, zeroForOne);
-            Bucket storage bucket = buckets[id][slots[id]];
+            uint256 s = slots[id];
+            Bucket storage bucket = buckets[id][s];
             if (bucket.liquidity > 0) {
-                slots[id]++;
-                // TODO: remove liquidity + mint
+                slots[id] = s + 1;
+                (uint256 amount0, uint256 amount1) = removeLiquidity(
+                    // TODO: safe cast
+                    key,
+                    lower,
+                    -int256(uint256(bucket.liquidity)),
+                    address(this)
+                );
+                bucket.filled = true;
+                bucket.amount0 += amount0;
+                bucket.amount1 += amount1;
             }
             lower += key.tickSpacing;
         }
 
-        ticks[poolId] = tickLower;
+        ticks[poolId] = tick;
 
         // TODO: params
         return (this.afterSwap.selector, 0);
+    }
+
+    function removeLiquidity(
+        PoolKey memory key,
+        int24 tickLower,
+        int256 liquidity,
+        address dst
+    ) private returns (uint256, uint256) {
+        (int256 d,) = poolManager.modifyLiquidity({
+            key: key,
+            params: ModifyLiquidityParams({
+                tickLower: tickLower,
+                tickUpper: tickLower + key.tickSpacing,
+                liquidityDelta: liquidity,
+                salt: bytes32(0)
+            }),
+            hookData: ""
+        });
+        BalanceDelta delta = BalanceDelta.wrap(d);
+        uint256 amount0;
+        uint256 amount1;
+        if (delta.amount0() > 0) {
+            amount0 = uint256(uint128(delta.amount0()));
+            poolManager.take(key.currency0, dst, amount0);
+        }
+        if (delta.amount1() > 0) {
+            amount1 = uint256(uint128(delta.amount1()));
+            poolManager.take(key.currency1, dst, amount1);
+        }
+        return (amount0, amount1);
     }
 
     function unlockCallback(bytes calldata data)
@@ -195,30 +239,25 @@ contract LimitOrder is TStore {
 
             return "";
         } else if (action == REMOVE_LIQUIDITY) {
-            /*
-            (int256 d,) = poolManager.modifyLiquidity({
-                key: key,
-                params: ModifyLiquidityParams({
-                    tickLower: MIN_TICK / TICK_SPACING * TICK_SPACING,
-                    tickUpper: MAX_TICK / TICK_SPACING * TICK_SPACING,
-                    liquidityDelta: -LIQUIDITY_DELTA,
-                    salt: bytes32(0)
-                }),
-                hookData: ""
-            });
-            BalanceDelta delta = BalanceDelta.wrap(d);
-            if (delta.amount0() > 0) {
-                uint256 amount0 = uint128(delta.amount0());
-                console.log("Remove liquidity amount 0: %e", amount0);
-                poolManager.take(key.currency0, address(this), amount0);
+            (
+                address msgSender,
+                PoolKey memory key,
+                int24 tickLower,
+                uint128 size,
+                uint128 liquidityRemaining
+            ) = abi.decode(data, (address, PoolKey, int24, uint128, uint128));
+
+            // Claim fees
+            uint256 fee0;
+            uint256 fee1;
+            if (liquidityRemaining > 0) {
+                (fee0, fee1) = removeLiquidity(key, tickLower, 0, address(this));
             }
-            if (delta.amount1() > 0) {
-                uint256 amount1 = uint128(delta.amount1());
-                console.log("Remove liquidity amount 1: %e", amount1);
-                poolManager.take(key.currency1, address(this), amount1);
-            }
-            */
-            return "";
+
+            // Remove liquidity for msg.sender
+            removeLiquidity(key, tickLower, -int256(uint256(size)), msgSender);
+
+            return abi.encode(fee0, fee1);
         }
         revert("Invalid action");
     }
@@ -236,7 +275,7 @@ contract LimitOrder is TStore {
         int24 tickLower,
         bool zeroForOne,
         uint128 liquidity
-    ) external payable setAction(ADD_LIQUIDITY) returns (uint256) {
+    ) external payable setAction(ADD_LIQUIDITY) {
         require(tickLower % key.tickSpacing == 0, "Invalid tick");
 
         poolManager.unlock(
@@ -249,20 +288,58 @@ contract LimitOrder is TStore {
         Bucket storage bucket = buckets[id][slot];
         bucket.liquidity += liquidity;
         bucket.sizes[msg.sender] += liquidity;
-
-        return slot;
     }
 
-    // Burn + take?
-    function take(bytes32 id, uint256 slot) external {
-        require(slot < slots[id], "Active slot");
-    }
-
-    function cancel(bytes32 id, uint256 slot)
+    function cancel(PoolKey calldata key, int24 tickLower, bool zeroForOne)
         external
         setAction(REMOVE_LIQUIDITY)
     {
-        require(slot == slots[id], "Not active slot");
+        bytes32 id = getBucketId(key.toId(), tickLower, zeroForOne);
+        uint256 slot = slots[id];
+        Bucket storage bucket = buckets[id][slot];
+        require(!bucket.filled, "bucket filled");
+
+        uint128 size = bucket.sizes[msg.sender];
+        require(size > 0, "limit order size = 0");
+
+        bucket.liquidity -= size;
+        bucket.sizes[msg.sender] = 0;
+
+        bytes memory res = poolManager.unlock(
+            abi.encode(msg.sender, key, tickLower, size, bucket.liquidity)
+        );
+        (uint256 fee0, uint256 fee1) = abi.decode(res, (uint256, uint256));
+
+        if (bucket.liquidity > 0) {
+            bucket.amount0 += fee0;
+            bucket.amount1 += fee1;
+        }
+    }
+
+    function take(
+        PoolKey calldata key,
+        int24 tickLower,
+        bool zeroForOne,
+        uint256 slot
+    ) external {
+        bytes32 id = getBucketId(key.toId(), tickLower, zeroForOne);
+        Bucket storage bucket = buckets[id][slot];
+        require(bucket.filled, "bucket not filled");
+
+        uint256 liquidity = uint256(bucket.liquidity);
+        uint256 size = uint256(bucket.sizes[msg.sender]);
+        bucket.sizes[msg.sender] = 0;
+
+        // Note: recommended to use mulDiv here
+        uint256 amount0 = bucket.amount0 * size / liquidity;
+        uint256 amount1 = bucket.amount1 * size / liquidity;
+
+        if (amount0 > 0) {
+            key.currency0.transferOut(msg.sender, amount0);
+        }
+        if (amount1 > 0) {
+            key.currency1.transferOut(msg.sender, amount1);
+        }
     }
 
     function getTick(PoolId poolId) private view returns (int24 tick) {
@@ -278,6 +355,25 @@ contract LimitOrder is TStore {
         // Round towards negative infinity
         if (tick < 0 && tick % tickSpacing != 0) compressed--;
         return compressed * tickSpacing;
+    }
+
+    function getTickRange(int24 tick0, int24 tick1, int24 tickSpacing)
+        private
+        pure
+        returns (int24 lower, int24 upper)
+    {
+        // Last lower tick
+        int24 l0 = getTickLower(tick0, tickSpacing);
+        // Current lower tick
+        int24 l1 = getTickLower(tick1, tickSpacing);
+
+        if (tick0 <= tick1) {
+            lower = l0;
+            upper = l1 - tickSpacing;
+        } else {
+            lower = l1 + tickSpacing;
+            upper = l0;
+        }
     }
 
     function sendEth(address to, uint256 amount) private {
