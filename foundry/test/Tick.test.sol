@@ -86,4 +86,22 @@ contract TickLastTest is Test {
             assertEq(upper, tests[i][3], "upper");
         }
     }
+
+    function test_fuzz(int24 t0, int24 t1) public {
+        t0 = int24(bound(t0, -1000, 1000));
+        t1 = int24(bound(t1, -1000, 1000));
+
+        (int24 lower, int24 upper) = t.getTickRange(t0, t1, S);
+
+        int24 dt = 0;
+        if (t0 <= t1) {
+            dt = t1 - t0;
+        } else {
+            dt = t0 - t1;
+        }
+
+        if (dt > S) {
+            assertGe(upper - lower, 0);
+        }
+    }
 }
