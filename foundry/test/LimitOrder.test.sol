@@ -238,16 +238,21 @@ contract LimitOrderTest is Test {
         console.log("Position liquidity: %e", posLiq);
         assertGt(posLiq, 0, "position liquidity = 0");
 
+        // Test cannot take before bucket is filled
+        vm.expectRevert();
+        vm.prank(users[0]);
+        hook.take(key, lower, zeroForOne, 0);
+
         // Swap
         action = SWAP;
         poolManager.unlock(abi.encode(uint256(1e18), !zeroForOne));
 
+        // Test take
         helper.set("Before take ETH", users[0].balance);
         helper.set("Before take USDC", usdc.balanceOf(users[0]));
 
-        uint256 slot = 0;
         vm.prank(users[0]);
-        hook.take(key, lower, zeroForOne, slot);
+        hook.take(key, lower, zeroForOne, 0);
 
         helper.set("After take ETH", users[0].balance);
         helper.set("After take USDC", usdc.balanceOf(users[0]));
