@@ -142,10 +142,10 @@ contract LimitOrder is TStore {
         returns (bytes4, int128)
     {
         PoolId poolId = key.toId();
-        int24 tick = getTick(poolId);
+        int24 tick = _getTick(poolId);
 
         (int24 lower, int24 upper) =
-            getTickRange(ticks[poolId], tick, key.tickSpacing);
+            _getTickRange(ticks[poolId], tick, key.tickSpacing);
 
         if (upper < lower) {
             return (this.afterSwap.selector, 0);
@@ -158,7 +158,7 @@ contract LimitOrder is TStore {
             Bucket storage bucket = buckets[id][s];
             if (bucket.liquidity > 0) {
                 slots[id] = s + 1;
-                (uint256 amount0, uint256 amount1,,) = removeLiquidity(
+                (uint256 amount0, uint256 amount1,,) = _removeLiquidity(
                     key, lower, -int256(uint256(bucket.liquidity))
                 );
                 bucket.filled = true;
@@ -232,9 +232,9 @@ contract LimitOrder is TStore {
             poolManager.sync(currency);
             if (currency == address(0)) {
                 require(msgVal >= amountToPay, "Not enough ETH sent");
-                sendEth(address(poolManager), amountToPay);
+                _sendEth(address(poolManager), amountToPay);
                 if (msgVal > amountToPay) {
-                    sendEth(msgSender, msgVal - amountToPay);
+                    _sendEth(msgSender, msgVal - amountToPay);
                 }
             } else {
                 require(msgVal == 0, "received ETH");
@@ -250,7 +250,7 @@ contract LimitOrder is TStore {
                 abi.decode(data, (PoolKey, int24, uint128));
 
             (uint256 amount0, uint256 amount1, uint256 fee0, uint256 fee1) =
-                removeLiquidity(key, tickLower, -int256(uint256(size)));
+                _removeLiquidity(key, tickLower, -int256(uint256(size)));
 
             return abi.encode(amount0, amount1, fee0, fee1);
         }
@@ -384,11 +384,11 @@ contract LimitOrder is TStore {
         );
     }
 
-    function getTick(PoolId poolId) private view returns (int24 tick) {
+    function _getTick(PoolId poolId) private view returns (int24 tick) {
         (, tick,,) = StateLibrary.getSlot0(address(poolManager), poolId);
     }
 
-    function getTickLower(int24 tick, int24 tickSpacing)
+    function _getTickLower(int24 tick, int24 tickSpacing)
         private
         pure
         returns (int24)
@@ -399,15 +399,15 @@ contract LimitOrder is TStore {
         return compressed * tickSpacing;
     }
 
-    function getTickRange(int24 tick0, int24 tick1, int24 tickSpacing)
+    function _getTickRange(int24 tick0, int24 tick1, int24 tickSpacing)
         private
         pure
         returns (int24 lower, int24 upper)
     {
         // Last lower tick
-        int24 l0 = getTickLower(tick0, tickSpacing);
+        int24 l0 = _getTickLower(tick0, tickSpacing);
         // Current lower tick
-        int24 l1 = getTickLower(tick1, tickSpacing);
+        int24 l1 = _getTickLower(tick1, tickSpacing);
 
         if (tick0 <= tick1) {
             lower = l0;
@@ -418,7 +418,7 @@ contract LimitOrder is TStore {
         }
     }
 
-    function removeLiquidity(
+    function _removeLiquidity(
         PoolKey memory key,
         int24 tickLower,
         int256 liquidity
@@ -457,7 +457,7 @@ contract LimitOrder is TStore {
         }
     }
 
-    function sendEth(address to, uint256 amount) private {
+    function _sendEth(address to, uint256 amount) private {
         (bool ok,) = to.call{value: amount}("");
         require(ok, "Send ETH failed");
     }
