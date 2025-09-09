@@ -11,11 +11,6 @@ import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {SwapParams, ModifyLiquidityParams} from "../types/PoolOperation.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
-import {
-    BeforeSwapDelta,
-    BeforeSwapDeltaLibrary
-} from "../types/BeforeSwapDelta.sol";
-import {MIN_TICK, MAX_TICK, MIN_SQRT_PRICE} from "../Constants.sol";
 import {TStore} from "../TStore.sol";
 
 contract LimitOrder is TStore {
@@ -263,6 +258,28 @@ contract LimitOrder is TStore {
         returns (bytes32)
     {
         return keccak256(abi.encode(PoolId.unwrap(poolId), tick, zeroForOne));
+    }
+
+    function getBucket(bytes32 id, uint256 slot)
+        public
+        view
+        returns (
+            bool filled,
+            uint256 amount0,
+            uint256 amount1,
+            uint128 liquidity
+        )
+    {
+        Bucket storage bucket = buckets[id][slot];
+        return (bucket.filled, bucket.amount0, bucket.amount1, bucket.liquidity);
+    }
+
+    function getOrderSize(bytes32 id, uint256 slot, address user)
+        public
+        view
+        returns (uint128)
+    {
+        return buckets[id][slot].sizes[user];
     }
 
     function place(

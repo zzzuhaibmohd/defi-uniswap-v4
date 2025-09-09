@@ -24,7 +24,7 @@ import {
 import {CounterHook} from "@exercises/CounterHook.sol";
 
 /*
-1. Run script/CounterCode.s.sol to print creation code, constructor args and flags
+1. Run script/CounterHookCode.s.sol to print creation code, constructor args and flags
 2. Run test/HookAddr.test.sol to find salt
 3. Set salt
 export SALT=
