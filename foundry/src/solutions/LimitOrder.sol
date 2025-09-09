@@ -272,6 +272,7 @@ contract LimitOrder is TStore {
         uint128 liquidity
     ) external payable setAction(ADD_LIQUIDITY) {
         require(tickLower % key.tickSpacing == 0, "Invalid tick");
+        require(liquidity > 0, "liquidity = 0");
 
         poolManager.unlock(
             abi.encode(
@@ -448,7 +449,7 @@ contract LimitOrder is TStore {
             poolManager.take(key.currency1, address(this), amount1);
         }
 
-        BalanceDelta fees = BalanceDelta.wrap(d);
+        BalanceDelta fees = BalanceDelta.wrap(f);
         if (fees.amount0() > 0) {
             fee0 = uint256(uint128(fees.amount0()));
         }
