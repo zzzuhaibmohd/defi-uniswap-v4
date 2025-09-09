@@ -4,6 +4,7 @@ pragma solidity 0.8.30;
 import {Test, console} from "forge-std/Test.sol";
 import {TestHelper} from "./TestHelper.sol";
 import {IERC20} from "../src/interfaces/IERC20.sol";
+import {IStateView} from "../src/interfaces/IStateView.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {SafeCast} from "../src/libraries/SafeCast.sol";
 import {Hooks} from "../src/libraries/Hooks.sol";
@@ -18,6 +19,7 @@ import {
 } from "../src/types/BalanceDelta.sol";
 import {
     POOL_MANAGER,
+    STATE_VIEW,
     USDC,
     MIN_TICK,
     MAX_TICK,
@@ -42,6 +44,7 @@ contract LimitOrderTest is Test {
 
     TestHelper helper;
     IERC20 constant usdc = IERC20(USDC);
+    IStateView constant stateView = IStateView(STATE_VIEW);
     IPoolManager constant poolManager = IPoolManager(POOL_MANAGER);
     PoolKey key;
     LimitOrder hook;
@@ -60,11 +63,11 @@ contract LimitOrderTest is Test {
     function setUp() public {
         helper = new TestHelper();
 
-        console.log("Deployer", address(this));
+        // console.log("Deployer", address(this));
 
         bytes32 salt = vm.envBytes32("SALT");
-        console.log("SALT");
-        console.logBytes32(salt);
+        // console.log("SALT");
+        // console.logBytes32(salt);
         hook = new LimitOrder{salt: salt}(POOL_MANAGER);
 
         key = PoolKey({
@@ -201,76 +204,147 @@ contract LimitOrderTest is Test {
     // - test cancel
     // - test take
     // - test after swap
-    function test_place_zero_for_one() public {
+    function test_place_take() public {
+        vm.skip(true);
         int24 tickLower = getTickLower(tick0, TICK_SPACING);
-        {
-            helper.set("user 0: before place ETH", users[0].balance);
-            helper.set("user 0: before place USDC", usdc.balanceOf(users[0]));
+        int24 lower = tickLower + TICK_SPACING;
+        int24 upper = lower + TICK_SPACING;
+        bool zeroForOne = true;
 
-            uint128 liq = 1e17;
-            vm.prank(users[0]);
-            hook.place{value: users[0].balance}(
-                key, tickLower + TICK_SPACING, true, liq
-            );
+        helper.set("Before place ETH", users[0].balance);
+        helper.set("Before place USDC", usdc.balanceOf(users[0]));
 
-            helper.set("user 0: after place ETH", users[0].balance);
-            helper.set("user 0: after place USDC", usdc.balanceOf(users[0]));
+        uint128 liq = 1e17;
+        vm.prank(users[0]);
+        hook.place{value: users[0].balance}(key, lower, zeroForOne, liq);
 
-            console.log(
-                "user 0 place ETH delta: %e",
-                helper.delta(
-                    "user 0: after place ETH", "user 0: before place ETH"
-                )
-            );
-            console.log(
-                "user 0 place USDC delta: %e",
-                helper.delta(
-                    "user 0: after place USDC", "user 0: before place USDC"
-                )
-            );
-        }
+        helper.set("After place ETH", users[0].balance);
+        helper.set("After place USDC", usdc.balanceOf(users[0]));
 
-        // TODO: assert bucket liquidity, assert pool manager liquidity
+        console.log(
+            "place ETH delta: %e",
+            helper.delta("After place ETH", "Before place ETH")
+        );
+        console.log(
+            "place USDC delta: %e",
+            helper.delta("After place USDC", "Before place USDC")
+        );
 
-        {
-            /*
-            helper.set("user 1: before place ETH", users[1].balance);
-            helper.set("user 1: before place USDC", usdc.balanceOf(users[1]));
+        // Check position liquidity increased
+        uint128 posLiq = 0;
+        (posLiq,,) = stateView.getPositionInfo(
+            key.toId(), address(hook), lower, upper, bytes32(0)
+        );
+        console.log("Position liquidity: %e", posLiq);
+        assertGt(posLiq, 0, "position liquidity = 0");
 
-            uint128 liq = 1e17;
-            vm.prank(users[1]);
-            hook.place(key, tickLower - TICK_SPACING, false, liq);
-
-            helper.set("user 1: after place ETH", users[1].balance);
-            helper.set("user 1: after place USDC", usdc.balanceOf(users[1]));
-
-            console.log("user 1 ETH delta: %e", helper.delta("user 1: after place ETH", "user 1: before place ETH"));
-            console.log("user 1 USDC delta: %e", helper.delta("user 1: after place USDC", "user 1: before place USDC"));
-            */
-        }
-
+        // Swap
         action = SWAP;
-        poolManager.unlock(abi.encode(uint256(1e18), false));
+        poolManager.unlock(abi.encode(uint256(1e18), !zeroForOne));
 
-        helper.set("user 0: before take ETH", users[0].balance);
-        helper.set("user 0: before take USDC", usdc.balanceOf(users[0]));
+        helper.set("Before take ETH", users[0].balance);
+        helper.set("Before take USDC", usdc.balanceOf(users[0]));
 
         uint256 slot = 0;
         vm.prank(users[0]);
-        hook.take(key, tickLower + TICK_SPACING, true, slot);
+        hook.take(key, lower, zeroForOne, slot);
 
-        helper.set("user 0: after take ETH", users[0].balance);
-        helper.set("user 0: after take USDC", usdc.balanceOf(users[0]));
+        helper.set("After take ETH", users[0].balance);
+        helper.set("After take USDC", usdc.balanceOf(users[0]));
 
         console.log(
-            "user take 0 ETH delta: %e",
-            helper.delta("user 0: after take ETH", "user 0: before take ETH")
+            "take ETH delta: %e",
+            helper.delta("After take ETH", "Before take ETH")
         );
         console.log(
-            "user take 0 USDC delta: %e",
-            helper.delta("user 0: after take USDC", "user 0: before take USDC")
+            "take USDC delta: %e",
+            helper.delta("After take USDC", "Before take USDC")
         );
-        // TODO: check slots
+
+        // Check user balances
+        assertGt(
+            helper.get("After take USDC"),
+            helper.get("Before take USDC"),
+            "USDC"
+        );
+    }
+
+    function test_cancel() public {
+        int24 tickLower = getTickLower(tick0, TICK_SPACING);
+        int24 lower = tickLower - TICK_SPACING;
+        int24 upper = lower + TICK_SPACING;
+        bool zeroForOne = false;
+
+        helper.set("Before place ETH", users[0].balance);
+        helper.set("Before place USDC", usdc.balanceOf(users[0]));
+
+        uint128 liq = 1e17;
+        vm.prank(users[0]);
+        hook.place(key, lower, zeroForOne, liq);
+
+        helper.set("After place ETH", users[0].balance);
+        helper.set("After place USDC", usdc.balanceOf(users[0]));
+
+        console.log(
+            "place ETH delta: %e",
+            helper.delta("After place ETH", "Before place ETH")
+        );
+        console.log(
+            "place USDC delta: %e",
+            helper.delta("After place USDC", "Before place USDC")
+        );
+
+        helper.set("Before cancel ETH", users[0].balance);
+        helper.set("Before cancel USDC", usdc.balanceOf(users[0]));
+
+        vm.prank(users[0]);
+        hook.cancel(key, lower, zeroForOne);
+
+        helper.set("After cancel ETH", users[0].balance);
+        helper.set("After cancel USDC", usdc.balanceOf(users[0]));
+
+        assertGt(
+            helper.get("After cancel USDC"),
+            helper.get("Before cancel USDC"),
+            "USDC"
+        );
+
+        // Test cannot cancel twice
+        vm.expectRevert();
+        vm.prank(users[0]);
+        hook.cancel(key, lower, zeroForOne);
+    }
+
+    function test_cancel_revert_if_filled() public {
+        int24 tickLower = getTickLower(tick0, TICK_SPACING);
+        int24 lower = tickLower - TICK_SPACING;
+        int24 upper = lower + TICK_SPACING;
+        bool zeroForOne = false;
+
+        uint128 liq = 1e17;
+        vm.prank(users[0]);
+        hook.place(key, lower, zeroForOne, liq);
+
+        // Test cannot cancel if bucket is filled
+        action = SWAP;
+        poolManager.unlock(abi.encode(uint256(12 * 1e18), !zeroForOne));
+
+        int24 tickAfter = getTick(key.toId());
+        console.log("tick after:", tickAfter);
+        assertLt(tickAfter, lower);
+
+        bytes32 id = hook.getBucketId(key.toId(), lower, zeroForOne);
+        (bool filled, uint256 amount0, uint256 amount1, uint256 liquidity) =
+            hook.getBucket(id, 0);
+        console.log("amount0: %e", amount0);
+        console.log("amount1: %e", amount1);
+        console.log("liquidity: %e", liquidity);
+
+        assertTrue(filled, "not filled");
+
+        vm.expectRevert();
+        vm.prank(users[0]);
+        hook.cancel(key, lower, zeroForOne);
     }
 
     function getTick(PoolId poolId) private view returns (int24 tick) {

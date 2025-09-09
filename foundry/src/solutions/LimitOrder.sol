@@ -378,6 +378,7 @@ contract LimitOrder is TStore {
 
         uint256 liquidity = uint256(bucket.liquidity);
         uint256 size = uint256(bucket.sizes[msg.sender]);
+        require(size > 0, "size = 0");
         bucket.sizes[msg.sender] = 0;
 
         // Note: recommended to use mulDiv here
