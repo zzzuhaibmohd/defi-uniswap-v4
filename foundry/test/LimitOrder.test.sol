@@ -21,17 +21,17 @@ import {
     MAX_TICK,
     MIN_SQRT_PRICE
 } from "../src/Constants.sol";
-import {CounterHook} from "@exercises/CounterHook.sol";
+import {LimitOrder} from "@exercises/LimitOrder.sol";
 
 /*
 1. Run test/FindHookSalt.test.sol to find salt
 2. Set salt
 export SALT=
 3. Run this test
-forge test --fork-url $FORK_URL --match-path test/CounterHook.test.sol -vvv
+forge test --fork-url $FORK_URL --match-path test/LimitOrder.test.sol -vvv
 */
 
-contract CounterHookTest is Test {
+contract LimitOrderTest is Test {
     using PoolIdLibrary for PoolKey;
     using BalanceDeltaLibrary for BalanceDelta;
     using SafeCast for int128;
@@ -40,10 +40,9 @@ contract CounterHookTest is Test {
     IERC20 constant usdc = IERC20(USDC);
     IPoolManager constant poolManager = IPoolManager(POOL_MANAGER);
     PoolKey key;
-    CounterHook hook;
+    LimitOrder hook;
 
     int24 constant TICK_SPACING = 10;
-    int256 constant LIQUIDITY_DELTA = 1e12;
 
     uint256 constant SWAP = 1;
     uint256 constant ADD_LIQUIDITY = 2;
@@ -56,7 +55,7 @@ contract CounterHookTest is Test {
         bytes32 salt = vm.envBytes32("SALT");
         console.log("SALT");
         console.logBytes32(salt);
-        hook = new CounterHook{salt: salt}(POOL_MANAGER);
+        hook = new LimitOrder{salt: salt}(POOL_MANAGER);
 
         key = PoolKey({
             currency0: address(0),
@@ -66,14 +65,21 @@ contract CounterHookTest is Test {
             hooks: address(hook)
         });
 
-        poolManager.initialize(key, 1e6 * (1 << 96));
+        // sqrt(token 1 / token 0) x 2**96 = 1 ETH = 3000 USDC
+        uint160 sqrtPriceX96 = 4347826086925359274971250;
+        poolManager.initialize(key, sqrtPriceX96);
 
         deal(USDC, address(this), 1e6 * 1e6);
         deal(address(this), 1e6 * 1e18);
+
+        // TODO:
+        // - Initialize pool
+        // - Add liquidity
     }
 
     receive() external payable {}
 
+    /*
     function unlockCallback(bytes calldata data)
         external
         returns (bytes memory)
@@ -170,28 +176,13 @@ contract CounterHookTest is Test {
 
         revert("Invalid action");
     }
+    */
 
-    function test_permissions() public {
-        Hooks.validateHookPermissions(address(hook), hook.getHookPermissions());
-    }
-
-    function test_liquidity() public {
+    // TODO:
+    // - test place
+    // -  test cancel
+    // - test take
+    function test_place() public {
         action = ADD_LIQUIDITY;
-        poolManager.unlock("");
-        assertEq(hook.counts(key.toId(), "beforeAddLiquidity"), 1);
-        assertEq(hook.counts(key.toId(), "afterAddLiquidity"), 0);
-
-        action = REMOVE_LIQUIDITY;
-        poolManager.unlock("");
-        assertEq(hook.counts(key.toId(), "beforeRemoveLiquidity"), 1);
-        assertEq(hook.counts(key.toId(), "afterRemoveLiquidity"), 0);
-    }
-
-    function test_swap() public {
-        action = SWAP;
-        deal(USDC, address(this), 100 * 1e6);
-        poolManager.unlock("");
-        assertEq(hook.counts(key.toId(), "beforeSwap"), 1);
-        assertEq(hook.counts(key.toId(), "afterSwap"), 1);
     }
 }
