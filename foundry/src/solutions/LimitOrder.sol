@@ -159,10 +159,7 @@ contract LimitOrder is TStore {
             if (bucket.liquidity > 0) {
                 slots[id] = s + 1;
                 (uint256 amount0, uint256 amount1,,) = removeLiquidity(
-                    key,
-                    lower,
-                    // TODO: safe cast
-                    -int256(uint256(bucket.liquidity))
+                    key, lower, -int256(uint256(bucket.liquidity))
                 );
                 bucket.filled = true;
                 bucket.amount0 += amount0;
@@ -402,7 +399,6 @@ contract LimitOrder is TStore {
         return compressed * tickSpacing;
     }
 
-    // TODO: double check
     function getTickRange(int24 tick0, int24 tick1, int24 tickSpacing)
         private
         pure
