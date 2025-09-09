@@ -19,7 +19,8 @@ import {
     USDC,
     MIN_TICK,
     MAX_TICK,
-    MIN_SQRT_PRICE
+    MIN_SQRT_PRICE,
+    MAX_SQRT_PRICE
 } from "../src/Constants.sol";
 import {LimitOrder} from "@exercises/LimitOrder.sol";
 
@@ -43,6 +44,7 @@ contract LimitOrderTest is Test {
     LimitOrder hook;
 
     int24 constant TICK_SPACING = 10;
+    uint128 constant LIQUIDITY = 1e18;
 
     uint256 constant SWAP = 1;
     uint256 constant ADD_LIQUIDITY = 2;
@@ -69,8 +71,13 @@ contract LimitOrderTest is Test {
         uint160 sqrtPriceX96 = 4347826086925359274971250;
         poolManager.initialize(key, sqrtPriceX96);
 
-        deal(USDC, address(this), 1e6 * 1e6);
-        deal(address(this), 1e6 * 1e18);
+        // TODO: check hook tick
+
+        action = ADD_LIQUIDITY;
+        poolManager.unlock("");
+
+        action = SWAP;
+        poolManager.unlock(abi.encode(uint256(1e18), true));
 
         // TODO:
         // - Initialize pool
@@ -79,7 +86,6 @@ contract LimitOrderTest is Test {
 
     receive() external payable {}
 
-    /*
     function unlockCallback(bytes calldata data)
         external
         returns (bytes memory)
@@ -90,7 +96,7 @@ contract LimitOrderTest is Test {
                 params: ModifyLiquidityParams({
                     tickLower: MIN_TICK / TICK_SPACING * TICK_SPACING,
                     tickUpper: MAX_TICK / TICK_SPACING * TICK_SPACING,
-                    liquidityDelta: LIQUIDITY_DELTA,
+                    liquidityDelta: int256(uint256(LIQUIDITY)),
                     salt: bytes32(0)
                 }),
                 hookData: ""
@@ -99,6 +105,7 @@ contract LimitOrderTest is Test {
             if (delta.amount0() < 0) {
                 uint256 amount0 = uint128(-delta.amount0());
                 console.log("Add liquidity amount 0: %e", amount0);
+                deal(address(this), amount0);
                 poolManager.sync(key.currency0);
                 poolManager.settle{value: amount0}();
             }
@@ -112,6 +119,7 @@ contract LimitOrderTest is Test {
             }
             return "";
         } else if (action == REMOVE_LIQUIDITY) {
+            /*
             (int256 d,) = poolManager.modifyLiquidity({
                 key: key,
                 params: ModifyLiquidityParams({
@@ -134,34 +142,52 @@ contract LimitOrderTest is Test {
                 poolManager.take(key.currency1, address(this), amount1);
             }
             return "";
+            */
         } else if (action == SWAP) {
-            // Swap ETH -> USDC
-            uint256 bal = usdc.balanceOf(address(this));
+            (uint256 amt, bool zeroForOne) = abi.decode(data, (uint256, bool));
+
+            if (zeroForOne) {
+                deal(address(this), amt);
+            } else {
+                deal(USDC, address(this), amt);
+            }
+
             int256 d = poolManager.swap({
                 key: key,
                 params: SwapParams({
-                    zeroForOne: true,
-                    amountSpecified: -(int256(bal)),
-                    sqrtPriceLimitX96: MIN_SQRT_PRICE + 1
+                    zeroForOne: zeroForOne,
+                    amountSpecified: -(int256(amt)),
+                    sqrtPriceLimitX96: zeroForOne ? MIN_SQRT_PRICE + 1 : MAX_SQRT_PRICE - 1
                 }),
                 hookData: ""
             });
 
+            // Take and settle
             BalanceDelta delta = BalanceDelta.wrap(d);
             int128 amount0 = delta.amount0();
             int128 amount1 = delta.amount1();
+
+            console.log("Swap amount0: %e", amount0);
+            console.log("Swap amount1: %e", amount1);
 
             (
                 address currencyIn,
                 address currencyOut,
                 uint256 amountIn,
                 uint256 amountOut
-            ) = (
-                key.currency0,
-                key.currency1,
-                (-amount0).toUint256(),
-                amount1.toUint256()
-            );
+            ) = zeroForOne
+                ? (
+                    key.currency0,
+                    key.currency1,
+                    (-amount0).toUint256(),
+                    amount1.toUint256()
+                )
+                : (
+                    key.currency1,
+                    key.currency0,
+                    (-amount1).toUint256(),
+                    amount0.toUint256()
+                );
 
             poolManager.take({
                 currency: currencyOut,
@@ -170,13 +196,18 @@ contract LimitOrderTest is Test {
             });
 
             poolManager.sync(currencyIn);
-            poolManager.settle{value: amountIn}();
+            if (currencyIn == address(0)) {
+                poolManager.settle{value: amountIn}();
+            } else {
+                IERC20(currencyIn).transfer(address(poolManager), amountIn);
+                poolManager.settle();
+            }
+
             return "";
         }
 
         revert("Invalid action");
     }
-    */
 
     // TODO:
     // - test place
