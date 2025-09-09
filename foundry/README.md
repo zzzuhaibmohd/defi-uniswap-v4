@@ -5,10 +5,10 @@
 cp .env.sample .env
 
 # Build exercises
-forge build --via-ir
+forge build
 
 # Build solutions
-FOUNDRY_PROFILE=solution forge build --via-ir
+FOUNDRY_PROFILE=solution forge build
 
 # Get block number
 FORK_URL=...
