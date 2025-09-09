@@ -227,7 +227,7 @@ contract LimitOrder is TStore {
             poolManager.sync(currency);
             if (currency == address(0)) {
                 require(msgVal >= amountToPay, "Not enough ETH sent");
-                _sendEth(address(poolManager), amountToPay);
+                poolManager.settle{value: amountToPay}();
                 if (msgVal > amountToPay) {
                     _sendEth(msgSender, msgVal - amountToPay);
                 }
@@ -236,8 +236,8 @@ contract LimitOrder is TStore {
                 IERC20(currency).transferFrom(
                     msgSender, address(poolManager), amountToPay
                 );
+                poolManager.settle();
             }
-            poolManager.settle();
 
             return "";
         } else if (action == REMOVE_LIQUIDITY) {
