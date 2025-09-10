@@ -28,35 +28,28 @@ foundry
     - [`PoolManager`](https://github.com/Uniswap/v4-core/blob/main/src/PoolManager.sol)
     - [`Hooks`](https://github.com/Uniswap/v4-core/blob/main/src/libraries/Hooks.sol)
   - Hooks are part of the derivation for `PoolId`
-    - 1 hooks contract for each pool
-    - Can have many pools connected to one hooks contract
+    - TODO: excalidraw
+      - 1 hooks contract for each pool
+      - Can have many pools connected to one hooks contract
+  - Hooks contract address encodes which hook functions it implements
   - Ideas
     - Limit orders
     - Dynamic fees set before or after swaps
-    - TODO: Custom AMM curves?
-      - https://docs.uniswap.org/contracts/v4/quickstart/hooks/async-swap
-    - TODO: Auto rebalancing liquidity example?
-  - Hooks contract address encodes which hook functions it implements
+    - Auto rebalancing liquidity example
 
 - [ ] How are hook flags encoded into the hooks address?
-  - bottom 14 bits
+  - Bottom 14 bits
     - [Flags](https://github.com/Uniswap/v4-core/blob/59d3ecf53afa9264a16bba0e38f4c5d2231f80bc/src/libraries/Hooks.sol#L27-L47)
     - [`hasPermission`](https://github.com/Uniswap/v4-core/blob/59d3ecf53afa9264a16bba0e38f4c5d2231f80bc/src/libraries/Hooks.sol#L337-L339)
   - [`HookMiner`](https://github.com/Uniswap/v4-periphery/blob/main/src/utils/HookMiner.sol)
-    - script
+    - test - `FindHookAddr`
 
-- TODO: Access msg.sender from inside a hook
-- TODO: CounterHook exercises
-- TODO: limit order?
-  - what is a limit order
+- [ ] TODO: excalidraw - Access msg.sender from inside a hook
+- [ ] TODO: [Exercise - counter hook](./foundry/exercises/counter.md)
+- [ ] TODO: [Application - limit order](./foundry/exercises/limit_order.md)
+  - [ ] TODO: excalidraw - What is a limit order
+  - [ ] TODO: excalidraw - Application
 
-TODO: - limit order book
-Uni v4
-https://medium.com/tokamak-network/uniswap-v4-limit-order-hook-part-1-586233620584
-
-https://github.com/eugenioclrc/limit-order-hooks/blob/main/src/TakeProfitsHook.sol
-
-https://github.com/Uniswap/v4-periphery/blob/6d955a3aea125808d4c3661a6c09339ec9206120/contracts/hooks/examples/LimitOrder.sol
-
-- Example
+- References
   - [`BaseHook`](https://github.com/Uniswap/v4-periphery/blob/main/src/utils/BaseHook.sol)
+  - [`LimitOrder`](https://github.com/Uniswap/v4-periphery/blob/example-contracts/contracts/hooks/examples/LimitOrder.sol)
