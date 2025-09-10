@@ -252,36 +252,6 @@ contract LimitOrder is TStore {
         revert("Invalid action");
     }
 
-    function getBucketId(PoolId poolId, int24 tick, bool zeroForOne)
-        public
-        pure
-        returns (bytes32)
-    {
-        return keccak256(abi.encode(PoolId.unwrap(poolId), tick, zeroForOne));
-    }
-
-    function getBucket(bytes32 id, uint256 slot)
-        public
-        view
-        returns (
-            bool filled,
-            uint256 amount0,
-            uint256 amount1,
-            uint128 liquidity
-        )
-    {
-        Bucket storage bucket = buckets[id][slot];
-        return (bucket.filled, bucket.amount0, bucket.amount1, bucket.liquidity);
-    }
-
-    function getOrderSize(bytes32 id, uint256 slot, address user)
-        public
-        view
-        returns (uint128)
-    {
-        return buckets[id][slot].sizes[user];
-    }
-
     function place(
         PoolKey calldata key,
         int24 tickLower,
@@ -400,6 +370,36 @@ contract LimitOrder is TStore {
             amount0,
             amount1
         );
+    }
+
+    function getBucketId(PoolId poolId, int24 tick, bool zeroForOne)
+        public
+        pure
+        returns (bytes32)
+    {
+        return keccak256(abi.encode(PoolId.unwrap(poolId), tick, zeroForOne));
+    }
+
+    function getBucket(bytes32 id, uint256 slot)
+        public
+        view
+        returns (
+            bool filled,
+            uint256 amount0,
+            uint256 amount1,
+            uint128 liquidity
+        )
+    {
+        Bucket storage bucket = buckets[id][slot];
+        return (bucket.filled, bucket.amount0, bucket.amount1, bucket.liquidity);
+    }
+
+    function getOrderSize(bytes32 id, uint256 slot, address user)
+        public
+        view
+        returns (uint128)
+    {
+        return buckets[id][slot].sizes[user];
     }
 
     function _getTick(PoolId poolId) private view returns (int24 tick) {

@@ -49,6 +49,7 @@ foundry
 - [ ] TODO: [Application - limit order](./foundry/exercises/limit_order.md)
   - [ ] TODO: excalidraw - What is a limit order
   - [ ] TODO: excalidraw - Application
+    - [ ] slots
 
 - References
   - [`BaseHook`](https://github.com/Uniswap/v4-periphery/blob/main/src/utils/BaseHook.sol)
