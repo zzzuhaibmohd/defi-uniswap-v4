@@ -199,24 +199,25 @@ contract LimitOrderTest is Test {
         revert("Invalid action");
     }
 
-    // TODO:
-    // - test place
-    // - test cancel
-    // - test take
-    // - test after swap
-    function test_place_take() public {
-        vm.skip(true);
+    function test_place() public {
+        // vm.skip(true);
+
         int24 tickLower = getTickLower(tick0, TICK_SPACING);
         int24 lower = tickLower + TICK_SPACING;
         int24 upper = lower + TICK_SPACING;
         bool zeroForOne = true;
 
+        // Test revert if lower tick is not a multiple of tick spacing
+        vm.expectRevert();
+        vm.prank(users[0]);
+        hook.place(key, lower + 1, false, 1e17);
+
         helper.set("Before place ETH", users[0].balance);
         helper.set("Before place USDC", usdc.balanceOf(users[0]));
 
-        uint128 liq = 1e17;
+        uint128 userLiq = 1e17;
         vm.prank(users[0]);
-        hook.place{value: users[0].balance}(key, lower, zeroForOne, liq);
+        hook.place{value: users[0].balance}(key, lower, zeroForOne, userLiq);
 
         helper.set("After place ETH", users[0].balance);
         helper.set("After place USDC", usdc.balanceOf(users[0]));
@@ -237,6 +238,30 @@ contract LimitOrderTest is Test {
         );
         console.log("Position liquidity: %e", posLiq);
         assertGt(posLiq, 0, "position liquidity = 0");
+
+        bytes32 id = hook.getBucketId(key.toId(), lower, zeroForOne);
+        (bool filled, uint256 amount0, uint256 amount1, uint256 bucketLiq) =
+            hook.getBucket(id, 0);
+        uint256 size = hook.getOrderSize(id, 0, users[0]);
+
+        assertTrue(!filled, "bucket filled");
+        assertEq(amount0, 0, "amount0");
+        assertEq(amount1, 0, "amount1");
+        assertEq(bucketLiq, userLiq, "bucket liquidity");
+        assertEq(size, userLiq, "order size");
+    }
+
+    function test_take() public {
+        // vm.skip(true);
+
+        int24 tickLower = getTickLower(tick0, TICK_SPACING);
+        int24 lower = tickLower + TICK_SPACING;
+        int24 upper = lower + TICK_SPACING;
+        bool zeroForOne = true;
+
+        uint128 liq = 1e17;
+        vm.prank(users[0]);
+        hook.place{value: users[0].balance}(key, lower, zeroForOne, liq);
 
         // Test cannot take before bucket is filled
         vm.expectRevert();
@@ -272,9 +297,16 @@ contract LimitOrderTest is Test {
             helper.get("Before take USDC"),
             "USDC"
         );
+
+        // Test cannot take twice
+        vm.expectRevert();
+        vm.prank(users[0]);
+        hook.take(key, lower, zeroForOne, 0);
     }
 
     function test_cancel() public {
+        // vm.skip(true);
+
         int24 tickLower = getTickLower(tick0, TICK_SPACING);
         int24 lower = tickLower - TICK_SPACING;
         int24 upper = lower + TICK_SPACING;
@@ -321,6 +353,8 @@ contract LimitOrderTest is Test {
     }
 
     function test_cancel_revert_if_filled() public {
+        // vm.skip(true);
+
         int24 tickLower = getTickLower(tick0, TICK_SPACING);
         int24 lower = tickLower - TICK_SPACING;
         int24 upper = lower + TICK_SPACING;

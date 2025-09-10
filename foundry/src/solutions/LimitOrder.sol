@@ -302,7 +302,6 @@ contract LimitOrder is TStore {
         uint256 slot = slots[id];
 
         Bucket storage bucket = buckets[id][slot];
-        require(!bucket.filled, "bucket filled");
         bucket.liquidity += liquidity;
         bucket.sizes[msg.sender] += liquidity;
 
