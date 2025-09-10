@@ -1,15 +1,3 @@
-foundry
-
-- [ ] TODO - code: Hooks
-  - hook deployment + flags
-    - `Hooks.hasPermission`
-    - https://docs.uniswap.org/contracts/v4/guides/hooks/hook-deployment
-
-- https://docs.uniswap.org/contracts/v4/guides/read-pool-state
-- https://github.com/Uniswap/v4-core/blob/main/src/libraries/StateLibrary.sol
-- msg.sender?
-- Exercise?
-
 ### Hooks
 
 - [ ] Key concepts
@@ -45,11 +33,14 @@ foundry
     - test - `FindHookAddr`
 
 - [ ] TODO: excalidraw - Access msg.sender from inside a hook
-- [ ] TODO: [Exercise - counter hook](./foundry/exercises/counter.md)
-- [ ] TODO: [Application - limit order](./foundry/exercises/limit_order.md)
-  - [ ] TODO: excalidraw - What is a limit order
+- [ ] [Exercise - counter hook](./foundry/exercises/counter.md)
+- [ ] [Application - limit order](./foundry/exercises/limit_order.md)
+  - [ ] [What is a limit order](https://app.uniswap.org/limit)
+  - [ ] [Review ticks and liquidity](https://www.desmos.com/calculator/x31s77joxw)
   - [ ] TODO: excalidraw - Application
+    - [ ] buckets
     - [ ] slots
+    - [ ] fees
 
 - References
   - [`BaseHook`](https://github.com/Uniswap/v4-periphery/blob/main/src/utils/BaseHook.sol)
