@@ -15,10 +15,9 @@
       - `afterDonate`
     - [`PoolManager`](https://github.com/Uniswap/v4-core/blob/main/src/PoolManager.sol)
     - [`Hooks`](https://github.com/Uniswap/v4-core/blob/main/src/libraries/Hooks.sol)
-  - Hooks are part of the derivation for `PoolId`
-    - TODO: excalidraw
-      - 1 hooks contract for each pool
-      - Can have many pools connected to one hooks contract
+  - [Hooks are part of the derivation for `PoolId`](./notes/hooks.png)
+    - 1 hooks contract for each pool
+    - Can have many pools connected to one hooks contract
   - Hooks contract address encodes which hook functions it implements
   - Ideas
     - Limit orders
