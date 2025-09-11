@@ -31,7 +31,7 @@
   - [`HookMiner`](https://github.com/Uniswap/v4-periphery/blob/main/src/utils/HookMiner.sol)
     - test - `FindHookAddr`
 
-- [ ] TODO: excalidraw - Access msg.sender from inside a hook
+- [ ] [Access msg.sender inside a hooks contract](./notes/hooks_msg_sender.png)
 - [ ] [Exercise - counter hook](./foundry/exercises/counter.md)
 - [ ] [Application - limit order](./foundry/exercises/limit_order.md)
   - [ ] [What is a limit order](https://app.uniswap.org/limit)
