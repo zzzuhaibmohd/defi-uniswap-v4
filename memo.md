@@ -32,14 +32,14 @@
     - test - `FindHookAddr`
 
 - [ ] [Access msg.sender inside a hooks contract](./notes/hooks_msg_sender.png)
-- [ ] [Exercise - counter hook](./foundry/exercises/counter.md)
+- [x] [Exercise - counter hook](./foundry/exercises/counter.md)
 - [ ] [Application - limit order](./foundry/exercises/limit_order.md)
   - [ ] [What is a limit order](https://app.uniswap.org/limit)
   - [ ] [Review ticks and liquidity](https://www.desmos.com/calculator/x31s77joxw)
-  - [ ] TODO: excalidraw - Application
-    - [ ] buckets
-    - [ ] slots
-    - [ ] fees
+  - [ ] [Algorithm](./notes/limit_order.png)
+    - buckets
+    - slots
+    - fees
 
 - References
   - [`BaseHook`](https://github.com/Uniswap/v4-periphery/blob/main/src/utils/BaseHook.sol)
