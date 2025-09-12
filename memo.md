@@ -2,6 +2,7 @@
 
 - [ ] Key concepts
   - External contract calls before and after pool operations such as swap and liquidity modifications
+    - [`PoolManager`](https://github.com/Uniswap/v4-core/blob/main/src/PoolManager.sol)
     - [`IHooks`](https://github.com/Uniswap/v4-core/blob/main/src/interfaces/IHooks.sol)
       - `beforeInitialize`
       - `afterInitialize`
@@ -13,11 +14,10 @@
       - `afterSwap`
       - `beforeDonate`
       - `afterDonate`
-    - [`PoolManager`](https://github.com/Uniswap/v4-core/blob/main/src/PoolManager.sol)
     - [`Hooks`](https://github.com/Uniswap/v4-core/blob/main/src/libraries/Hooks.sol)
   - [Hooks are part of the derivation for `PoolId`](./notes/hooks.png)
     - 1 hooks contract for each pool
-    - Can have many pools connected to one hooks contract
+    - Can have multiple pools connected to one hooks contract
   - Hooks contract address encodes which hook functions it implements
   - Ideas
     - Limit orders
@@ -29,11 +29,11 @@
     - [Flags](https://github.com/Uniswap/v4-core/blob/59d3ecf53afa9264a16bba0e38f4c5d2231f80bc/src/libraries/Hooks.sol#L27-L47)
     - [`hasPermission`](https://github.com/Uniswap/v4-core/blob/59d3ecf53afa9264a16bba0e38f4c5d2231f80bc/src/libraries/Hooks.sol#L337-L339)
   - [`HookMiner`](https://github.com/Uniswap/v4-periphery/blob/main/src/utils/HookMiner.sol)
-    - test - `FindHookAddr`
+    - [`FindHookSalt.sol`](https://github.com/Cyfrin/defi-uniswap-v4/blob/dev/foundry/test/FindHookSalt.test.sol)
 
 - [ ] [Access msg.sender inside a hooks contract](./notes/hooks_msg_sender.png)
 - [x] [Exercise - counter hook](./foundry/exercises/counter.md)
-- [ ] [Application - limit order](./foundry/exercises/limit_order.md)
+- [Application - limit order](./foundry/exercises/limit_order.md)
   - [ ] [What is a limit order](https://app.uniswap.org/limit)
   - [ ] [Review ticks and liquidity](https://www.desmos.com/calculator/x31s77joxw)
   - [ ] [Algorithm](./notes/limit_order.png)
