@@ -62,6 +62,27 @@ Please refer to this for an in-depth explanation of the content:
   - [Exercise - get currency delta](./foundry/exercises/reader.md)
 - [Application - swap router](./foundry/exercises/swap_router.md)
 
+# Hooks
+
+- Key concepts
+  - External contract calls before and after pool operations such as swap and liquidity modifications
+    - [`PoolManager`](https://github.com/Uniswap/v4-core/blob/main/src/PoolManager.sol)
+    - [`IHooks`](https://github.com/Uniswap/v4-core/blob/main/src/interfaces/IHooks.sol)
+    - [`Hooks`](https://github.com/Uniswap/v4-core/blob/main/src/libraries/Hooks.sol)
+  - [Hooks are part of the derivation for `PoolId`](./notes/hooks.png)
+- How are hook flags encoded into the hooks address?
+  - Bottom 14 bits
+    - [Flags](https://github.com/Uniswap/v4-core/blob/59d3ecf53afa9264a16bba0e38f4c5d2231f80bc/src/libraries/Hooks.sol#L27-L47)
+    - [`hasPermission`](https://github.com/Uniswap/v4-core/blob/59d3ecf53afa9264a16bba0e38f4c5d2231f80bc/src/libraries/Hooks.sol#L337-L339)
+  - [`HookMiner`](https://github.com/Uniswap/v4-periphery/blob/main/src/utils/HookMiner.sol)
+    - [`FindHookSalt.sol`](https://github.com/Cyfrin/defi-uniswap-v4/blob/dev/foundry/test/FindHookSalt.test.sol)
+- [Access msg.sender inside a hooks contract](./notes/hooks_msg_sender.png)
+- [Exercise - counter hook](./foundry/exercises/counter.md)
+- [Application - limit order](./foundry/exercises/limit_order.md)
+  - [What is a limit order](https://app.uniswap.org/limit)
+  - [Review ticks and liquidity](https://www.desmos.com/calculator/x31s77joxw)
+  - [Algorithm](./notes/limit_order.png)
+
 # Resources
 
 - [Uniswap V4](https://v4.uniswap.org/)
@@ -78,3 +99,5 @@ Please refer to this for an in-depth explanation of the content:
 - [Uniswap v4 by Example](https://www.v4-by-example.org/)
 - [Bunni](https://bunni.xyz/)
 - [Damian Rusinek - Secrets of Uniswap V4: A Deep Dive into Hooks Security](https://www.youtube.com/watch?v=VhEbnGSUdYY)
+- [`BaseHook`](https://github.com/Uniswap/v4-periphery/blob/main/src/utils/BaseHook.sol)
+- [`LimitOrder`](https://github.com/Uniswap/v4-periphery/blob/example-contracts/contracts/hooks/examples/LimitOrder.sol)
