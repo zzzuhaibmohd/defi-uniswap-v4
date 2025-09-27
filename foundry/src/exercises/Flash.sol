@@ -32,11 +32,24 @@ contract Flash is IUnlockCallback {
         onlyPoolManager
         returns (bytes memory)
     {
-        // Write your code here
+        (address currency, uint256 amount) =
+            abi.decode(data, (address, uint256));
+        // 1. Take the currency from the pool manager
+        poolManager.take(currency, address(this), amount);
+        // 2. Call the tester contract to check if the currency was taken
+        (bool ok,) = tester.call("");
+        require(ok, "test failed");
+        // 3. Sync the currency
+        poolManager.sync(currency);
+        // 4. Transfer the currency back to the pool manager
+        IERC20(currency).transfer(address(poolManager), amount);
+        // 5. Settle the currency
+        poolManager.settle();
         return "";
     }
 
     function flash(address currency, uint256 amount) external {
-        // Write your code here
+        bytes memory data = abi.encode(currency, amount);
+        poolManager.unlock(data);
     }
 }
