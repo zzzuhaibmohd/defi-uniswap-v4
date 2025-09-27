@@ -18,7 +18,8 @@ contract Reader {
         assembly ("memory-safe") {
             mstore(0, and(target, 0xffffffffffffffffffffffffffffffffffffffff))
             mstore(
-                32, and(currency, 0xffffffffffffffffffffffffffffffffffffffff)
+                32,
+                and(currency, 0xffffffffffffffffffffffffffffffffffffffff)
             )
             slot := keccak256(0, 64)
         }
@@ -29,6 +30,12 @@ contract Reader {
         view
         returns (int256 delta)
     {
-        // Write your code here
+        // 1. Compute the slot
+        bytes32 slot = computeSlot(target, currency);
+        // 2. Load the slot from the pool manager
+        return int256(uint256(poolManager.exttload(slot)));
     }
 }
+
+// Run the test
+// forge test --fork-url $FORK_URL --match-path test/Reader.test.sol -vvv
