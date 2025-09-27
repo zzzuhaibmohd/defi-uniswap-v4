@@ -41,8 +41,13 @@ contract Flash is IUnlockCallback {
         require(ok, "test failed");
         // 3. Sync the currency
         poolManager.sync(currency);
-        // 4. Transfer the currency back to the pool manager
-        IERC20(currency).transfer(address(poolManager), amount);
+        // 4. Transfer the currency back to the pool manager (Since we are borrowing USDC)
+        if (currency == address(0)) {
+            poolManager.settle{value: amount}();
+        } else {
+            IERC20(currency).transfer(address(poolManager), amount);
+            poolManager.settle();
+        }
         // 5. Settle the currency
         poolManager.settle();
         return "";
@@ -53,3 +58,6 @@ contract Flash is IUnlockCallback {
         poolManager.unlock(data);
     }
 }
+
+// Run the test
+// forge test --fork-url $FORK_URL --match-path test/Flash.test.sol -vvv
